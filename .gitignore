@@ -2,3 +2,6 @@
 avarice
 Makefile
 autoconf.h
+config.log
+config.status
+Makefile.in
