@@ -146,7 +146,7 @@ int jtag2::recvFrame(unsigned char *&msg, unsigned short &seqno)
 		debugOut("recv: timeout\n");
 		break;
 	    }
-	    debugOut("recv: 0x%02x\n", c);
+	    //	    debugOut("recv: 0x%02x\n", c);
 	}
 	checksum ^= c;
 
@@ -296,7 +296,8 @@ bool jtag2::sendJtagCommand(uchar *command, int commandSize, int &tries,
     check(tries++ < MAX_JTAG_COMM_ATTEMPS,
 	      "JTAG ICE: Cannot synchronise");
 
-    debugOut("\ncommand[0x%02x, %d]: ", command[0], tries);
+    debugOut("\ncommand[0x%02x (%s), %d]: ",
+	     command[0], jtagCmdToString(command[0]), tries);
 
     for (int i = 0; i < commandSize; i++)
 	debugOut("%.2X ", command[i]);
@@ -312,6 +313,9 @@ bool jtag2::sendJtagCommand(uchar *command, int commandSize, int &tries,
 	return false;
 
     debugOut("response: ");
+    if (msgsize > 0) {
+      debugOut("%s ", jtagRspToString(msg[0]));
+    }
     for (int i = 0; i < msgsize; i++)
     {
 	debugOut("%.2X ", msg[i]);

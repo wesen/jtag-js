@@ -119,6 +119,8 @@ void jtag1::parseEvents(const char *)
 
 bool jtag1::jtagContinue(void)
 {
+#if 0 // GDB CODE XXX
+  
     updateBreakpoints();        // download new bp configuration
 
     if (!doSimpleJtagCommand('G', 0))
@@ -217,5 +219,6 @@ bool jtag1::jtagContinue(void)
 	if (breakpoint)
 	    return true;
     }
+#endif // GDB CODE
 }
 

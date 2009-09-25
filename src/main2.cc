@@ -1,6 +1,11 @@
+#include <stdio.h>
+
 #include "avarice.h"
+
 #include "jtag.h"
 #include "jtag2.h"
+
+jtag *theJtagICE = NULL;
 
 int main(int argc, char *argv) {
 	unsigned long jtagBitrate = 0;
@@ -16,12 +21,14 @@ int main(int argc, char *argv) {
 		MKI, MKII, MKII_DW
 	} protocol = MKII;
 
+	debugMode = true;
+	
 	jtagBitrate = 250000;
 	jtagDeviceName = "usb";
-	deviceName = "at90usb1287";
+	//	deviceName = "at90usb1287";
 
 	try {
-		jtag *theJtagICE = new jtag2(jtagDeviceName, deviceName, false, isDragon, applyNsrst, isXmega);
+		theJtagICE = new jtag2(jtagDeviceName, deviceName, false, isDragon, applyNsrst, isXmega);
 		theJtagICE->dchain.units_before = 0;
 		theJtagICE->dchain.units_after = 0;
 		theJtagICE->dchain.bits_before = 0;
@@ -29,6 +36,7 @@ int main(int argc, char *argv) {
 		theJtagICE->parseEvents(eventList);
 		
 		theJtagICE->initJtagBox();
+
 	} catch (const char *msg) {
 		fprintf(stderr, "%s\n", msg);
 		return 1;
@@ -36,6 +44,8 @@ int main(int argc, char *argv) {
 		fprintf(stderr, "Cannot initialize JTAG ICE\n");
 		return 1;
 	}
+
+	printf("init jtag\n");
 
 	theJtagICE->jtagReadFuses();
 }

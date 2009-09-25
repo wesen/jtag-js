@@ -137,17 +137,25 @@ bool jtag2::eventLoop(void)
 	  // Check for input from JTAG ICE (breakpoint, sleep, info, power)
 	  // or gdb (user break)
 	  FD_ZERO (&readfds);
+
+#if 0 // GDB CODE XXX
 	  if (gdbFileDescriptor != -1)
 	    FD_SET (gdbFileDescriptor, &readfds);
+#endif
+	  
 	  FD_SET (jtagBox, &readfds);
+
+#if 0 // GDB CODE XXX
 	  if (gdbFileDescriptor != -1)
 	    maxfd = jtagBox > gdbFileDescriptor ? jtagBox : gdbFileDescriptor;
 	  else
+#endif
 	    maxfd = jtagBox;
 
 	  int numfds = select(maxfd + 1, &readfds, 0, 0, 0);
 	  unixCheck(numfds, "GDB/JTAG ICE communications failure");
 
+#if 0 // GDB CODE XXX
 	  if (gdbFileDescriptor != -1 && FD_ISSET(gdbFileDescriptor, &readfds))
 	    {
 		int c = getDebugChar();
@@ -159,6 +167,7 @@ bool jtag2::eventLoop(void)
 		else
 		    debugOut("Unexpected GDB input `%02x'\n", c);
 	    }
+#endif
 
 	  if (FD_ISSET(jtagBox, &readfds))
 	    {

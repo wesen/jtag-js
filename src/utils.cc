@@ -78,10 +78,12 @@ static void check_1(bool printUnixError, const char *fmt, va_list args)
 	statusOut(": %s", strerror(en));
     statusOut("\n");
 
+#if 0 // GDB CODE XXX
     vgdbOut(fmt, args);
     if (printUnixError)
 	gdbOut(": %s", strerror(en));
     gdbOut("\n");
+#endif
 
     exit(EXIT_FAILURE);
 }

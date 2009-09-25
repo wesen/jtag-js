@@ -572,7 +572,7 @@ enum emulator {
 
 
 typedef struct {
-    uchar val;
+    unsigned char val;
     bool  used;
 } AVRMemoryByte;
 
@@ -588,6 +588,17 @@ typedef struct {
     const char *name;
 } BFDimage;
 
+
+/**
+ * Struct to convert specific bytes received on jtag to a more readable string
+ * to help while debugging.
+ */
+typedef struct codeToString_s {
+  uint8_t code;
+  char *name;
+} codeToString_t;
+
+#define countof(arr) (sizeof(arr)/(sizeof(arr[0])))
 
 // The Sync_CRC/EOP message terminator (no real CRC in sight...)
 #define JTAG_EOM 0x20, 0x20
@@ -655,11 +666,19 @@ class jtag
 
   unsigned int get_page_size(BFDmemoryType memtype);
 
+  // protected debugging helper function
+  const char *codeToString(uchar code, codeToString_t *arr, int max, const char *defaultName);
+  
+  
   public:
   jtag(void);
   jtag(const char *dev, char *name, emulator type = EMULATOR_JTAGICE);
   virtual ~jtag(void);
 
+  // Debugging helper functions
+  const char *jtagCmdToString(uchar command);
+  const char *jtagRspToString(uchar rsp);
+  
   // Basic JTAG I/O
   // -------------
 
@@ -779,7 +798,7 @@ class jtag
     Returns a dynamically allocated buffer with the requested bytes if
     successful (caller must free), or NULL if the read failed.
   **/
-  virtual uchar *jtagRead(unsigned long addr, unsigned int numBytes) = 0;
+  virtual unsigned char *jtagRead(unsigned long addr, unsigned int numBytes) = 0;
 
   /** Write 'numBytes' bytes from 'buffer' to target memory address 'addr'
 
@@ -791,7 +810,7 @@ class jtag
     Note: The current behaviour for program-space writes is pretty
     weird (does not match jtagRead). See comments in jtagrw.cc.
   **/
-  virtual bool jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[]) = 0;
+  virtual bool jtagWrite(unsigned long addr, unsigned int numBytes, unsigned char buffer[]) = 0;
 
 
   /** Write fuses to target.
@@ -813,7 +832,7 @@ class jtag
 
     Shows extended, high and low fuse byte.
   */
-  void jtagDisplayFuses(uchar *fuseBits);
+  void jtagDisplayFuses(unsigned char *fuseBits);
 
 
   /** Write lockbits to target.
@@ -833,7 +852,7 @@ class jtag
 
     Shows raw value and individual bits.
   **/
-  void jtagDisplayLockBits(uchar *lockBits);
+  void jtagDisplayLockBits(unsigned char *lockBits);
 
 };
 

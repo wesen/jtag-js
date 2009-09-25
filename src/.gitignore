@@ -3,3 +3,8 @@ avarice
 Makefile
 autoconf.h
 Makefile.in
+*.exe
+.deps
+stamp-h1
+cscope.out
+*~
