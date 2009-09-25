@@ -21,7 +21,7 @@
 # $Id: Makefile.am,v 1.6 2005/08/15 18:47:03 joerg_wunsch Exp $
 AUTOMAKE_OPTIONS = foreign
 
-bin_PROGRAMS = avarice
+bin_PROGRAMS = avarice manuel
 
 avarice_SOURCES =	\
 	avarice.h	\
@@ -55,3 +55,30 @@ avarice_SOURCES =	\
 	gnu_getopt.c    \
 	gnu_getopt.h    \
 	gnu_getopt1.c
+
+manuel_SOURCES =	\
+	crc16.h		\
+	crc16.c		\
+	devdescr.cc	\
+	ioreg.cc	\
+	ioreg.h		\
+	jtag.h		\
+	jtag1.h		\
+	jtag2.h		\
+	jtag2bp.cc	\
+	jtag2io.cc	\
+	jtag2misc.cc	\
+	jtag2prog.cc	\
+	jtag2run.cc	\
+	jtag2rw.cc	\
+	jtag2_defs.h	\
+	jtag2usb.cc	\
+	jtagbp.cc	\
+	jtaggeneric.cc	\
+	jtagio.cc	\
+	jtagmisc.cc	\
+	jtagprog.cc	\
+	jtagrun.cc	\
+	jtagrw.cc	\
+	main2.cc		\
+	utils.cc        
