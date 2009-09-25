@@ -308,6 +308,7 @@ int main(int argc, char **argv)
 	const char *jtagDeviceName = NULL;
 	char *device_name = 0;
 	const char *eventlist = "none,run,target_power_on,target_sleep,target_wakeup";
+
 	unsigned long jtagBitrate = 0;
 	const char *hostName = "0.0.0.0";	/* INADDR_ANY */
 	int  hostPortNumber;
