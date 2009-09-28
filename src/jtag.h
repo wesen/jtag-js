@@ -594,7 +594,7 @@ typedef struct {
  * to help while debugging.
  */
 typedef struct codeToString_s {
-  uint8_t code;
+  unsigned char code;
   char *name;
 } codeToString_t;
 
