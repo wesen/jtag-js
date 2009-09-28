@@ -5,9 +5,13 @@
 #include "jtag.h"
 #include "jtag2.h"
 
+#include "terminal-io.hh"
+
+TerminalIOClass terminal;
+
 jtag *theJtagICE = NULL;
 
-int main(int argc, char *argv) {
+int main(int argc, char *argv[]) {
 	unsigned long jtagBitrate = 0;
 	const char *jtagDeviceName = NULL;
 	char *deviceName = 0;
@@ -47,5 +51,13 @@ int main(int argc, char *argv) {
 
 	printf("init jtag\n");
 
-	theJtagICE->jtagReadFuses();
+	terminal.go();
+
+	for (;;) {
+	  if (terminal.isDataAvailable()) {
+	    const string *str = terminal.getData();
+	    printf("eval %s\n", str->c_str());
+	    delete str;
+	  }
+	}
 }

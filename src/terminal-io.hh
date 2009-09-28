@@ -17,6 +17,8 @@ public:
   virtual ~TerminalIOClass();
   
   void print(const std::string &str);
+  bool isDataAvailable();
+  const string *getData();
 
   static int readlinePoll();
   virtual void doWork();
