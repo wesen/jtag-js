@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <signal.h>
 
 #include "avarice.h"
 
@@ -7,12 +8,18 @@
 
 #include "js.hh"
 
+#include <readline/readline.h>
 #include "terminal-io.hh"
 
 TerminalIOClass terminal;
 JavaScript myJS;
 
 jtag *theJtagICE = NULL;
+
+void signal_handler(int signal) {
+	printf("SIGINT\n");
+	terminal.stop();
+}
 
 int main(int argc, char *argv[]) {
 	unsigned long jtagBitrate = 0;
@@ -55,14 +62,32 @@ int main(int argc, char *argv[]) {
 	}
 
 	printf("init jtag\n");
+	//	signal(SIGINT, signal_handler);
 
 	terminal.go();
 
+	// 	theJtagICE->initJtagOnChipDebugging(jtagBitrate);
+	
+	jtag2 *theJtagICE2 = (jtag2*)theJtagICE;
+
+	theJtagICE->startPolling();
 	for (;;) {
+		bool interrupt = false;
+		bool breakpoint = false;
+
+		theJtagICE->pollDevice(&interrupt, &breakpoint);
+	
+		if (!terminal.isRunning()) {
+			break;
+		}
+
 	  if (terminal.isDataAvailable()) {
 	    const string *str = terminal.getData();
 			myJS.eval(*str);
 	    delete str;
 	  }
 	}
+	rl_cleanup_after_signal();
+
+	return 0;
 }

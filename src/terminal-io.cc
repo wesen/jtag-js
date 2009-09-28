@@ -24,6 +24,11 @@ void TerminalIOClass::print(const string &str) {
 TerminalIOClass *TerminalIOClass::terminalIO = NULL;
 
 int TerminalIOClass::readlinePoll() {
+	if (terminalIO->stopRequested) {
+		rl_done = 1;
+		return 0;
+	}
+	
   if (terminalIO->inputQueue.isDataAvailable()) {
     const string *str = terminalIO->inputQueue.getData();
     char buf[256];
@@ -40,15 +45,17 @@ int TerminalIOClass::readlinePoll() {
 		
 		delete str;
   }
+	return 0;
 }
 
 void TerminalIOClass::doWork() {
-  for (;;) {
+	while (!stopRequested) {
     char *line = readline("> ");
-    if (!line)
+    if (!line || stopRequested)
       break;
     outputQueue.putData(line);
   }
+	rl_reset_after_signal();
 }
 
 bool TerminalIOClass::isDataAvailable() {

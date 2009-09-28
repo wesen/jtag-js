@@ -787,6 +787,10 @@ class jtag
       Return true for a breakpoint, false for gdb input. **/
   virtual bool jtagContinue(void) = 0;
 
+	virtual void startPolling(void) = 0;
+	
+	virtual bool pollDevice(bool *gdbInterrupt, bool *breakpoint) = 0;
+
   // R/W memory
   // ----------
 

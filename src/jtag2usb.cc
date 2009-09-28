@@ -41,6 +41,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <readline/readline.h>
+
 #include <usb.h>
 
 #include "jtag.h"
@@ -54,7 +56,7 @@
  */
 #define JTAGICE_BULK_EP_WRITE 0x02
 #define JTAGICE_BULK_EP_READ  0x82
-#define JTAGICE_MAX_XFER 64
+#define JTAGICE_MAX_XFER 65536
 
 static volatile sig_atomic_t signalled, exiting, ready;
 static pid_t usb_kid;
@@ -196,8 +198,10 @@ static usb_dev_handle *opendev(const char *jtagDeviceName, emulator emu_type,
  */
 static void sigtermhandler(int signo)
 {
+	printf("sigtermhandler\n");
   // give the pipes some time to flush before exiting
   exiting++;
+	rl_cleanup_after_signal();
   alarm(1);
 }
 
@@ -231,6 +235,7 @@ static void inthandler(int signo)
 {
   int status;
 
+	printf("int handler\n");
   kill(usb_kid, SIGTERM);
   (void)wait(&status);
   signal(signo, SIG_DFL);
@@ -268,15 +273,14 @@ static void usb_daemon(usb_dev_handle *udev, int fd, int cfd, int usb_interface)
     {
       ioflags |= O_ASYNC;
       if (fcntl(fd, F_SETFL, &ioflags) != -1)
-	signal(SIGIO, dummyhandler);
+				signal(SIGIO, dummyhandler);
     }
 #endif /* defined(O_ASYNC) */
 
   int highestfd = fd > cfd? fd: cfd;
   bool polling = false;
 
-  for (; !signalled;)
-    {
+  for (; !signalled;) {
       fd_set r;
       struct timeval tv;
       int rv;
@@ -293,156 +297,157 @@ static void usb_daemon(usb_dev_handle *udev, int fd, int cfd, int usb_interface)
       FD_SET(fd, &r);
       FD_SET(cfd, &r);
       if (polling)
-	{
-	  tv.tv_sec = 0;
-	  tv.tv_usec = 100000;
-	}
+				{
+					tv.tv_sec = 0;
+					tv.tv_usec = 100000;
+				}
       else
-	{
-	  tv.tv_sec = 1;
-	  tv.tv_usec = 0;
-	}
+				{
+					tv.tv_sec = 1;
+					tv.tv_usec = 0;
+				}
       if (!exiting && select(highestfd + 1, &r, NULL, NULL, &tv) > 0)
-	{
-	  if (FD_ISSET(fd, &r))
-	    {
-	      if ((rv = read(fd, buf, JTAGICE_MAX_XFER)) > 0)
-		{
-		  if (usb_bulk_write(udev, JTAGICE_BULK_EP_WRITE, buf,
-				     rv, 5000) !=
-		      rv)
-		    {
-		      fprintf(stderr, "USB bulk write error: %s\n",
-			      usb_strerror());
-		      exit(1);
-		    }
-		  continue;
-		}
-	      if (rv < 0 && errno != EINTR && errno != EAGAIN)
-		{
-		  fprintf(stderr, "read error from AVaRICE: %s\n",
-			  strerror(errno));
-		  exit(1);
-		}
-	    }
-	  if (FD_ISSET(cfd, &r))
-	    {
-	      char buf[JTAGICE_MAX_XFER];
-	      char cmd[1];
+				{
+					if (FD_ISSET(fd, &r))
+						{
+							if ((rv = read(fd, buf, JTAGICE_MAX_XFER)) > 0)
+								{
+									if (usb_bulk_write(udev, JTAGICE_BULK_EP_WRITE, buf,
+																		 rv, 5000) !=
+											rv)
+										{
+											fprintf(stderr, "USB bulk write error: %s\n",
+															usb_strerror());
+											exit(1);
+										}
+									continue;
+								}
+							if (rv < 0 && errno != EINTR && errno != EAGAIN)
+								{
+									fprintf(stderr, "read error from AVaRICE: %s\n",
+													strerror(errno));
+									exit(1);
+								}
+						}
+					if (FD_ISSET(cfd, &r))
+						{
+							char buf[JTAGICE_MAX_XFER];
+							char cmd[1];
 
-	      if (FD_ISSET(cfd, &r))
-		{
-		  if ((rv = read(cfd, cmd, 1)) > 0)
-		    {
-		      /*
-		       * Examine AVaRICE's command.
-		       */
-		      if (cmd[0] == 'r')
-			{
-			  polling = false;
-			  do_read = true;
-			}
-		      else if (cmd[0] == 'p')
-			{
-			  polling = true;
-			}
-		      else if (cmd[0] == 'c')
-			{
-			  clear_eps = true;
-			}
-		      else
-			{
-			  fprintf(stderr, "unknown command in USB_daemon: %c\n",
-				  cmd[0]);
-			}
-		    }
-		  if (rv < 0 && errno != EINTR && errno != EAGAIN)
-		    {
-		      fprintf(stderr, "read error on control pipe from AVaRICE: %s\n",
-			      strerror(errno));
-		      exit(1);
-		    }
-		}
-	    }
-	}
+							if (FD_ISSET(cfd, &r))
+								{
+									if ((rv = read(cfd, cmd, 1)) > 0)
+										{
+											/*
+											 * Examine AVaRICE's command.
+											 */
+											if (cmd[0] == 'r')
+												{
+													polling = false;
+													do_read = true;
+												}
+											else if (cmd[0] == 'p')
+												{
+													polling = true;
+												}
+											else if (cmd[0] == 'c')
+												{
+													clear_eps = true;
+												}
+											else
+												{
+													fprintf(stderr, "unknown command in USB_daemon: %c\n",
+																	cmd[0]);
+												}
+										}
+									if (rv < 0 && errno != EINTR && errno != EAGAIN)
+										{
+											fprintf(stderr, "read error on control pipe from AVaRICE: %s\n",
+															strerror(errno));
+											exit(1);
+										}
+								}
+						}
+				}
 
-      if (clear_eps)
-	{
-	  usb_resetep(udev, JTAGICE_BULK_EP_READ);
-	  usb_resetep(udev, JTAGICE_BULK_EP_WRITE);
-	}
+			if (clear_eps)
+				{
+					usb_resetep(udev, JTAGICE_BULK_EP_READ);
+					usb_resetep(udev, JTAGICE_BULK_EP_WRITE);
+				}
 
       if (!exiting && (do_read || polling))
-	{
-	  rv = usb_bulk_read(udev, JTAGICE_BULK_EP_READ, buf,
-			     JTAGICE_MAX_XFER, 500);
-	  if (rv == 0 || rv == -EINTR || rv == -EAGAIN || rv == -ETIMEDOUT)
-	    {
-	      /* OK, try again */
-	    }
-	  else if (rv < 0)
-	    {
-	      if (!exiting)
-		fprintf(stderr, "USB bulk read error: %s\n",
-			usb_strerror());
-	      exit(1);
-	    }
-	  else
-	    {
-	      /*
-	       * We read a (partial) packet from USB.  Return
-	       * what we've got so far to AVaRICE, and examine
-	       * the length field to see whether we have to
-	       * expect more.
-	       */
-	      polling = false;
-	      if (write(fd, buf, rv) != rv)
-		{
-		  fprintf(stderr, "short write to AVaRICE: %s\n",
-			  strerror(errno));
-		  exit(1);
-		}
-	      unsigned int pkt_len = (unsigned char)buf[3] +
-		((unsigned char)buf[4] << 8) + ((unsigned char)buf[5] << 16) +
-		((unsigned char)buf[6] << 24);
-	      const unsigned int header_size = 8;
-	      const unsigned int crc_size = 2;
-	      pkt_len += header_size + crc_size;
-	      pkt_len -= rv;
-	      /* OK, if there is more to read, do so. */
-	      while (!exiting && pkt_len > 0)
-		{
-		  rv = usb_bulk_read(udev, JTAGICE_BULK_EP_READ, buf,
-				     pkt_len > JTAGICE_MAX_XFER? JTAGICE_MAX_XFER: pkt_len,
-				     100);
+				{
+					rv = usb_bulk_read(udev, JTAGICE_BULK_EP_READ, buf,
+														 JTAGICE_MAX_XFER, 500);
+					//					printf("readUSB: %d\n", rv);
+					if (rv == 0 || rv == -EINTR || rv == -EAGAIN || rv == -ETIMEDOUT)
+						{
+							/* OK, try again */
+						}
+					else if (rv < 0)
+						{
+							if (!exiting)
+								fprintf(stderr, "USB bulk read error: %s\n",
+												usb_strerror());
+							exit(1);
+						}
+					else
+						{
+							/*
+							 * We read a (partial) packet from USB.  Return
+							 * what we've got so far to AVaRICE, and examine
+							 * the length field to see whether we have to
+							 * expect more.
+							 */
+							polling = false;
+							if (write(fd, buf, rv) != rv)
+								{
+									fprintf(stderr, "short write to AVaRICE: %s\n",
+													strerror(errno));
+									exit(1);
+								}
+							unsigned int pkt_len = (unsigned char)buf[3] +
+								((unsigned char)buf[4] << 8) + ((unsigned char)buf[5] << 16) +
+								((unsigned char)buf[6] << 24);
+							const unsigned int header_size = 8;
+							const unsigned int crc_size = 2;
+							pkt_len += header_size + crc_size;
+							pkt_len -= rv;
+							/* OK, if there is more to read, do so. */
+							while (!exiting && pkt_len > 0)
+								{
+									rv = usb_bulk_read(udev, JTAGICE_BULK_EP_READ, buf,
+																		 pkt_len > JTAGICE_MAX_XFER? JTAGICE_MAX_XFER: pkt_len,
+																		 100);
 
-		  /*
-		   * Zero-length reads are not expected here,
-		   * as we carefully examined the packet
-		   * length from the header.
-		   */
-		  if (rv == -EINTR || rv == -EAGAIN || rv == -ETIMEDOUT)
-		    {
-		      continue;
-		    }
-		  if (rv <= 0)
-		    {
-		      if (!exiting)
-			fprintf(stderr,
-				"USB bulk read error in continuation block: %s\n",
-				usb_strerror());
-		      exit(1);
-		    }
-		  if (write(fd, buf, rv) != rv)
-		    {
-		      fprintf(stderr, "short write to AVaRICE: %s\n",
-			      strerror(errno));
-		      exit(1);
-		    }
-		  pkt_len -= rv;
-		}
-	    }
-	}
+									/*
+									 * Zero-length reads are not expected here,
+									 * as we carefully examined the packet
+									 * length from the header.
+									 */
+									if (rv == -EINTR || rv == -EAGAIN || rv == -ETIMEDOUT)
+										{
+											continue;
+										}
+									if (rv <= 0)
+										{
+											if (!exiting)
+												fprintf(stderr,
+																"USB bulk read error in continuation block: %s\n",
+																usb_strerror());
+											exit(1);
+										}
+									if (write(fd, buf, rv) != rv)
+										{
+											fprintf(stderr, "short write to AVaRICE: %s\n",
+															strerror(errno));
+											exit(1);
+										}
+									pkt_len -= rv;
+								}
+						}
+				}
     }
 }
 
@@ -456,7 +461,7 @@ pid_t jtag::openUSB(const char *jtagDeviceName)
   unixCheck(socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, pype) == 0,
             "cannot create pipe");
   unixCheck(socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, cpipe) == 0,
-	    "cannot create control pipe");
+						"cannot create control pipe");
 
   signal(SIGCHLD, childhandler);
   signal(SIGUSR1, usr1handler);

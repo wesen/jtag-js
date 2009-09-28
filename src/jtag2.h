@@ -234,7 +234,7 @@ class jtag2: public jtag
       b[1] = (l >> 8) & 0xff;
     };
 
-
+ public:
     bool sendJtagCommand(uchar *command, int commandSize, int &tries,
 			 uchar *&msg, int &msgsize, bool verify = true);
 
@@ -276,11 +276,15 @@ class jtag2: public jtag
      **/
     void updateBreakpintsDW(void);
 
+ private:
     /** Wait until either the ICE or GDB issued an event.  As this is
 	the heart of jtagContinue for the mkII, it returns true when a
 	breakpoint was reached, and false for GDB input.
      **/
     bool eventLoop(void);
+
+		virtual void startPolling();
+		virtual bool pollDevice(bool *gdbInterrupt, bool *breakpoint);
 };
 
 #endif

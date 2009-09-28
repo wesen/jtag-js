@@ -6,9 +6,9 @@
 
 #include "thread.hh"
 
-#define CONSOLE_PRINTF(fmt, args...) { \
+#define CONSOLE_PRINTF(fmt...) { \
 	char buf[256]; \
-	snprintf(buf, sizeof(buf), fmt, args); \
+	snprintf(buf, sizeof(buf), fmt); \
 	TerminalIOClass::printTerminal(buf);	 \
 }
 

@@ -78,6 +78,7 @@ public:
 };
 
 class ThreadedClass {
+
 public:
   ThreadedClass() : stopRequested(false), running(false) {
   }
@@ -97,6 +98,10 @@ public:
     stopRequested = true;
     //    pthread_join(&thread, 0);
   }
+
+	bool isRunning() {
+		return running;
+	}
 
 protected:
   pthread_t thread;

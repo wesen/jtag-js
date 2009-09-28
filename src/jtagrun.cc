@@ -117,23 +117,13 @@ void jtag1::parseEvents(const char *)
     // current no event name parsing in mkI
 }
 
-bool jtag1::jtagContinue(void)
-{
-#if 0 // GDB CODE XXX
-  
-    updateBreakpoints();        // download new bp configuration
+void jtag1::startPolling() {
+}
 
-    if (!doSimpleJtagCommand('G', 0))
-    {
-	gdbOut("Failed to continue\n");
-	return true;
-    }
-
-    for (;;)
-    {
+bool jtag1::pollDevice(bool *gdbInterrupt, bool *breakpoint) {
+#if 0 // GDB stuff
 	int maxfd;
 	fd_set readfds;
-	bool breakpoint = false, gdbInterrupt = false;
 
 	// Now that we are "going", wait for either a response from the JTAG
 	// box or a nudge from GDB.
@@ -155,7 +145,7 @@ bool jtag1::jtagContinue(void)
 	    if (c == 3) // interrupt
 	    {
 		debugOut("interrupted by GDB\n");
-		gdbInterrupt = true;
+		*gdbInterrupt = true;
 	    }
 	    else
 		debugOut("Unexpected GDB input `%02x'\n", c);
@@ -192,7 +182,7 @@ bool jtag1::jtagContinue(void)
 		count = timeout_read(buf, 2, JTAG_RESPONSE_TIMEOUT);
 		jtagCheck(count);
 		check(count == 2, JTAG_CAUSE);
-		breakpoint = true;
+		*breakpoint = true;
                 debugOut(": Break Status Register = 0x%02x%02x\n",
                          buf[0], buf[1]);
 		break;
@@ -212,13 +202,32 @@ bool jtag1::jtagContinue(void)
 		break; 
 	    }
 	}
+#endif
+}
+
+bool jtag1::jtagContinue(void)
+{
+	bool breakpoint = false, gdbInterrupt = false;
+
+#if 0
+    updateBreakpoints();        // download new bp configuration
+
+    if (!doSimpleJtagCommand('G', 0))
+    {
+			gdbOut("Failed to continue\n");
+			return true;
+    }
+
+    for (;;)
+    {
+			pollDevice(&gdbInterrupt, &breakpoint);
+	}
+#endif
 
 	// We give priority to user interrupts
 	if (gdbInterrupt)
 	    return false;
 	if (breakpoint)
 	    return true;
-    }
-#endif // GDB CODE
 }
 

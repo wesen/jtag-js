@@ -46,15 +46,19 @@ unsigned long jtag2::getProgramCounter(void)
     uchar command[] = { CMND_READ_PC };
 
     check(doJtagCommand(command, sizeof(command), response, responseSize),
-	  "cannot read program counter");
-    unsigned long result = b4_to_u32(response + 1);
-    delete [] response;
+					"cannot read program counter");
+		if (response != NULL) {
+			unsigned long result = b4_to_u32(response + 1);
+			delete [] response;
 
-    // The JTAG box sees program memory as 16-bit wide locations. GDB
-    // sees bytes. As such, double the PC value.
-    result *= 2;
-
-    return result;
+			// The JTAG box sees program memory as 16-bit wide locations. GDB
+			// sees bytes. As such, double the PC value.
+			result *= 2;
+			
+			return result;
+		} else {
+			return 0x00;
+		}
 }
 
 bool jtag2::setProgramCounter(unsigned long pc)
@@ -114,156 +118,170 @@ bool jtag2::resumeProgram(void)
     return true;
 }
 
-bool jtag2::eventLoop(void)
-{
-    int maxfd;
-    fd_set readfds;
-    bool breakpoint = false, gdbInterrupt = false;
+bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
+	int maxfd;
+	fd_set readfds;
 
-    // Now that we are "going", wait for either a response from the JTAG
-    // box or a nudge from GDB.
+	//	debugOut("Waiting for input.\n");
 
-    if (ctrlPipe != -1)
-      {
-	  /* signal the USB daemon to start polling. */
-	  char cmd[1] = { 'p' };
-	  (void)write(ctrlPipe, cmd, 1);
-      }
-
-    for (;;)
-      {
-	  debugOut("Waiting for input.\n");
-
-	  // Check for input from JTAG ICE (breakpoint, sleep, info, power)
-	  // or gdb (user break)
-	  FD_ZERO (&readfds);
+	// Check for input from JTAG ICE (breakpoint, sleep, info, power)
+	// or gdb (user break)
+	FD_ZERO (&readfds);
 
 #if 0 // GDB CODE XXX
-	  if (gdbFileDescriptor != -1)
-	    FD_SET (gdbFileDescriptor, &readfds);
+	if (gdbFileDescriptor != -1)
+		FD_SET (gdbFileDescriptor, &readfds);
 #endif
 	  
-	  FD_SET (jtagBox, &readfds);
+	FD_SET (jtagBox, &readfds);
 
 #if 0 // GDB CODE XXX
-	  if (gdbFileDescriptor != -1)
-	    maxfd = jtagBox > gdbFileDescriptor ? jtagBox : gdbFileDescriptor;
-	  else
+	if (gdbFileDescriptor != -1)
+		maxfd = jtagBox > gdbFileDescriptor ? jtagBox : gdbFileDescriptor;
+	else
 #endif
-	    maxfd = jtagBox;
+		maxfd = jtagBox;
 
-	  int numfds = select(maxfd + 1, &readfds, 0, 0, 0);
-	  unixCheck(numfds, "GDB/JTAG ICE communications failure");
+	struct timeval timeout = {
+		0,  10000 // 10 ms
+	};
+	
+	int numfds = select(maxfd + 1, &readfds, 0, 0, &timeout);
+	unixCheck(numfds, "GDB/JTAG ICE communications failure");
 
 #if 0 // GDB CODE XXX
-	  if (gdbFileDescriptor != -1 && FD_ISSET(gdbFileDescriptor, &readfds))
-	    {
-		int c = getDebugChar();
-		if (c == 3) // interrupt
-		  {
+	if (gdbFileDescriptor != -1 && FD_ISSET(gdbFileDescriptor, &readfds))
+		{
+			int c = getDebugChar();
+			if (c == 3) // interrupt
+				{
 		      debugOut("interrupted by GDB\n");
 		      gdbInterrupt = true;
-		  }
-		else
+				}
+			else
 		    debugOut("Unexpected GDB input `%02x'\n", c);
-	    }
+		}
 #endif
 
-	  if (FD_ISSET(jtagBox, &readfds))
-	    {
-		uchar *evtbuf;
-		int evtSize;
-		unsigned short seqno;
-		evtSize = recvFrame(evtbuf, seqno);
-		if (evtSize >= 0) {
+	if (FD_ISSET(jtagBox, &readfds))
+		{
+			uchar *evtbuf;
+			int evtSize;
+			unsigned short seqno;
+			evtSize = recvFrame(evtbuf, seqno);
+			if (evtSize >= 0) {
 		    // XXX if not event, should push frame back into queue...
 		    // We really need a queue of received frames.
 		    if (seqno != 0xffff)
-			debugOut("Expected event packet, got other response");
+					debugOut("Expected event packet, got other response");
 		    else if (!nonbreaking_events[evtbuf[8] - EVT_BREAK])
 		      {
-			  switch (evtbuf[8])
-			    {
-				// Program stopped at some kind of breakpoint.
-			    case EVT_BREAK:
-			    case EVT_EXT_RESET:
-			    case EVT_PDSB_BREAK:
-			    case EVT_PDSMB_BREAK:
-			    case EVT_PROGRAM_BREAK:
-				breakpoint = true;
-				break;
+						switch (evtbuf[8])
+							{
+								// Program stopped at some kind of breakpoint.
+							case EVT_BREAK:
+							case EVT_EXT_RESET:
+							case EVT_PDSB_BREAK:
+							case EVT_PDSMB_BREAK:
+							case EVT_PROGRAM_BREAK:
+								*breakpoint = true;
+								break;
 
-			    case EVT_IDR_DIRTY:
-				// The program is still running at IDR dirty, so
-				// pretend a user break;
-				gdbInterrupt = true;
-				printf("\nIDR dirty: 0x%02x\n", evtbuf[9]);
-				break;
+							case EVT_IDR_DIRTY:
+								// The program is still running at IDR dirty, so
+								// pretend a user break;
+								*gdbInterrupt = true;
+								printf("\nIDR dirty: 0x%02x\n", evtbuf[9]);
+								break;
 
-				// Fatal debugWire errors, cannot continue
-			    case EVT_ERROR_PHY_FORCE_BREAK_TIMEOUT:
-			    case EVT_ERROR_PHY_MAX_BIT_LENGTH_DIFF:
-			    case EVT_ERROR_PHY_OPT_RECEIVE_TIMEOUT:
-			    case EVT_ERROR_PHY_OPT_RECEIVED_BREAK:
-			    case EVT_ERROR_PHY_RECEIVED_BREAK:
-			    case EVT_ERROR_PHY_RECEIVE_TIMEOUT:
-			    case EVT_ERROR_PHY_RELEASE_BREAK_TIMEOUT:
-			    case EVT_ERROR_PHY_SYNC_OUT_OF_RANGE:
-			    case EVT_ERROR_PHY_SYNC_TIMEOUT:
-			    case EVT_ERROR_PHY_SYNC_TIMEOUT_BAUD:
-			    case EVT_ERROR_PHY_SYNC_WAIT_TIMEOUT:
-				gdbInterrupt = true;
-				printf("\nFatal debugWIRE communication event: 0x%02x\n",
-				       evtbuf[8]);
-				break;
+								// Fatal debugWire errors, cannot continue
+							case EVT_ERROR_PHY_FORCE_BREAK_TIMEOUT:
+							case EVT_ERROR_PHY_MAX_BIT_LENGTH_DIFF:
+							case EVT_ERROR_PHY_OPT_RECEIVE_TIMEOUT:
+							case EVT_ERROR_PHY_OPT_RECEIVED_BREAK:
+							case EVT_ERROR_PHY_RECEIVED_BREAK:
+							case EVT_ERROR_PHY_RECEIVE_TIMEOUT:
+							case EVT_ERROR_PHY_RELEASE_BREAK_TIMEOUT:
+							case EVT_ERROR_PHY_SYNC_OUT_OF_RANGE:
+							case EVT_ERROR_PHY_SYNC_TIMEOUT:
+							case EVT_ERROR_PHY_SYNC_TIMEOUT_BAUD:
+							case EVT_ERROR_PHY_SYNC_WAIT_TIMEOUT:
+								*gdbInterrupt = true;
+								printf("\nFatal debugWIRE communication event: 0x%02x\n",
+											 evtbuf[8]);
+								break;
 
-				// Other fatal errors, user could mask them off
-			    case EVT_ICE_POWER_ERROR_STATE:
-				gdbInterrupt = true;
-				printf("\nJTAG ICE mkII power failure\n");
-				break;
+								// Other fatal errors, user could mask them off
+							case EVT_ICE_POWER_ERROR_STATE:
+								*gdbInterrupt = true;
+								printf("\nJTAG ICE mkII power failure\n");
+								break;
 
-			    case EVT_TARGET_POWER_OFF:
-				gdbInterrupt = true;
-				printf("\nTarget power turned off\n");
-				break;
+							case EVT_TARGET_POWER_OFF:
+								*gdbInterrupt = true;
+								printf("\nTarget power turned off\n");
+								break;
 
-			    case EVT_TARGET_POWER_ON:
-				gdbInterrupt = true;
-				printf("\nTarget power returned\n");
-				break;
+							case EVT_TARGET_POWER_ON:
+								*gdbInterrupt = true;
+								printf("\nTarget power returned\n");
+								break;
 
-			    case EVT_TARGET_SLEEP:
-				gdbInterrupt = true;
-				printf("\nTarget went to sleep\n");
-				break;
+							case EVT_TARGET_SLEEP:
+								*gdbInterrupt = true;
+								printf("\nTarget went to sleep\n");
+								break;
 
-			    case EVT_TARGET_WAKEUP:
-				gdbInterrupt = true;
-				printf("\nTarget went out of sleep\n");
-				break;
+							case EVT_TARGET_WAKEUP:
+								*gdbInterrupt = true;
+								printf("\nTarget went out of sleep\n");
+								break;
 
-				// Events where we want to continue
-			    case EVT_NONE:
-			    case EVT_RUN:
-				break;
+								// Events where we want to continue
+							case EVT_NONE:
+							case EVT_RUN:
+								break;
 
-			    default:
-				gdbInterrupt = true;
-				printf("\nUnhandled JTAG ICE mkII event: 0x%0x2\n",
-				       evtbuf[8]);
-			    }
+							default:
+								*gdbInterrupt = true;
+								printf("\nUnhandled JTAG ICE mkII event: 0x%0x2\n",
+											 evtbuf[8]);
+							}
 		      }
 		    delete [] evtbuf;
+			}
 		}
-	    }
+}
 
-	  // We give priority to user interrupts
-	  if (gdbInterrupt)
-	      return false;
-	  if (breakpoint)
-	      return true;
-      }
+void jtag2::startPolling(void) {
+	if (ctrlPipe != -1)
+		{
+			/* signal the USB daemon to start polling. */
+			char cmd[1] = { 'p' };
+			(void)write(ctrlPipe, cmd, 1);
+		}
+}
+
+bool jtag2::eventLoop(void)
+{
+	startPolling();
+
+	bool gdbInterrupt = false;
+	bool breakpoint = false;
+		
+	// Now that we are "going", wait for either a response from the JTAG
+	// box or a nudge from GDB.
+
+	for (;;)
+		{
+			bool ret = pollDevice(&gdbInterrupt, &breakpoint);
+		}
+
+	// We give priority to user interrupts
+	if (gdbInterrupt)
+		return false;
+	if (breakpoint)
+		return true;
 }
 
 
