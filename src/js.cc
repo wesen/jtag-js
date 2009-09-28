@@ -31,10 +31,44 @@ JSBool myjs_quit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *r
 	return JS_TRUE;
 }
 
+/* functions stolen from spidermonkey itself */
+JSBool myjs_load(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+    uintN i;
+    JSString *str;
+    const char *filename;
+    JSScript *script;
+    JSBool ok;
+    jsval result;
+    uint32 oldopts;
+
+    for (i = 0; i < argc; i++) {
+        str = JS_ValueToString(cx, argv[i]);
+        if (!str)
+            return JS_FALSE;
+        argv[i] = STRING_TO_JSVAL(str);
+        filename = JS_GetStringBytes(str);
+        oldopts = JS_GetOptions(cx);
+        JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
+        script = JS_CompileFile(cx, obj, filename);
+        if (!script) {
+            ok = JS_FALSE;
+        } else {
+					ok = JS_ExecuteScript(cx, obj, script, &result);
+					JS_DestroyScript(cx, script);
+        }
+        JS_SetOptions(cx, oldopts);
+        if (!ok)
+            return JS_FALSE;
+    }
+
+    return JS_TRUE;
+}
+
 static JSFunctionSpec myjs_global_functions[] = {
 	{ "print", myjs_print, 1, 0, 0 },
 	{ "quit", myjs_quit, 0, 0, 0 },
 	{ "exit", myjs_quit, 0, 0, 0 },
+	{ "load", myjs_load, 1, 0, 0 },
 	{ 0 }
 };
 
@@ -163,6 +197,7 @@ JSBool jsJtag_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	if (!JS_ConvertArguments(cx, argc, argv, "uu", &addr, &numBytes))
 		return JS_FALSE;
 
+	printf("read %d bytes from %x\n", numBytes, addr);
 	unsigned char *buf = theJtagICE->jtagRead(addr, numBytes);
 	if (buf == NULL)
 		return JS_FALSE;
@@ -178,6 +213,37 @@ JSBool jsJtag_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 	return JS_TRUE;
 }
 
+JSBool jsJtag_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	uint32_t addr;
+	JSObject *arr;
+
+	if (!JS_ConvertArguments(cx, argc, argv, "uo", &addr, &arr))
+		return JS_FALSE;
+	if (!JS_IsArrayObject(cx, arr))
+		return JS_FALSE;
+	jsuint jsNumBytes;
+	if (!JS_GetArrayLength(cx, arr, &jsNumBytes)) {
+		return JS_FALSE;
+	}
+	uint32_t numBytes = jsNumBytes;
+
+	unsigned char buf[numBytes];
+	for (uint32_t i = 0; i < numBytes; i++) {
+		jsval val;
+		if (!JS_GetElement(cx, arr, i, &val))
+			return JS_FALSE;
+		if (!JSVAL_IS_INT(val)) {
+			return JS_FALSE;
+		}
+		buf[i] = JSVAL_TO_INT(val);
+		printf("%x val[%d/%d] = %d\n", addr, i, numBytes, buf[i]);
+	}
+
+	bool ret = theJtagICE->jtagWrite(addr, numBytes, buf);
+	*rval = BOOLEAN_TO_JSVAL(ret);
+	return JS_TRUE;
+}
+
 static JSFunctionSpec jsjtag_functions[] = {
 	{ "getPC", jsJtag_getProgramCounter, 0, 0, 0 },
 	{ "setPC", jsJtag_setProgramCounter, 1, 0, 0 },
@@ -185,6 +251,7 @@ static JSFunctionSpec jsjtag_functions[] = {
 	{ "interrupt", jsJtag_interruptProgram, 0, 0, 0 },
 	{ "resume", jsJtag_resumeProgram, 0, 0, 0 },
 	{ "read", jsJtag_read, 2, 0, 0 },
+	{ "write", jsJtag_write, 2, 0, 0 },
 	{ 0 }
 };
 
