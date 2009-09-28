@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <readline/history.h>
 #include <readline/readline.h>
 
 #include "terminal-io.hh"
@@ -53,6 +54,9 @@ void TerminalIOClass::doWork() {
     char *line = readline("> ");
     if (!line || stopRequested)
       break;
+		if (line && *line) {
+			add_history(line);
+		}
     outputQueue.putData(line);
   }
 	rl_reset_after_signal();

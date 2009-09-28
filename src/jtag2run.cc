@@ -70,7 +70,7 @@ bool jtag2::setProgramCounter(unsigned long pc)
     u32_to_b4(command + 1, pc / 2);
 
     check(doJtagCommand(command, sizeof(command), response, responseSize),
-	  "cannot write program counter");
+					"cannot write program counter");
 
     delete [] response;
 

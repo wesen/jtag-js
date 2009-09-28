@@ -10,8 +10,10 @@ protected:
 	JSRuntime *rt;
 	JSContext *cx;
 	JSObject *global;
+	JSObject *jtagObject;
 
 	static JSClass global_class;
+	static JSClass jtag_class;
 
 public:
 	JavaScript();
