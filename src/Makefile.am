@@ -84,4 +84,6 @@ manuel_SOURCES =	\
 	utils.cc        \
 	terminal-io.cc \
 	terminal-io.hh \
-	thread.hh
+	thread.hh\
+	js.cc \
+	js.hh

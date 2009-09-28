@@ -5,9 +5,12 @@
 #include "jtag.h"
 #include "jtag2.h"
 
+#include "js.hh"
+
 #include "terminal-io.hh"
 
 TerminalIOClass terminal;
+JavaScript myJS;
 
 jtag *theJtagICE = NULL;
 
@@ -26,6 +29,8 @@ int main(int argc, char *argv[]) {
 	} protocol = MKII;
 
 	debugMode = true;
+
+	myJS.init();
 	
 	jtagBitrate = 250000;
 	jtagDeviceName = "usb";
@@ -56,7 +61,7 @@ int main(int argc, char *argv[]) {
 	for (;;) {
 	  if (terminal.isDataAvailable()) {
 	    const string *str = terminal.getData();
-	    printf("eval %s\n", str->c_str());
+			myJS.eval(*str);
 	    delete str;
 	  }
 	}

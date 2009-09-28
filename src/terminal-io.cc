@@ -28,17 +28,17 @@ int TerminalIOClass::readlinePoll() {
     const string *str = terminalIO->inputQueue.getData();
     char buf[256];
     if (rl_point > 0) {
-      snprintf(buf, sizeof(buf), "...\n\noutput %s\n", str->c_str());
+      snprintf(buf, sizeof(buf), "...\n\n%s", str->c_str());
     } else {
-      snprintf(buf, sizeof(buf), "\routput %s\n", str->c_str());
+      snprintf(buf, sizeof(buf), "\r%s", str->c_str());
     }
     
     printf("%s", buf);
-      fflush(stdout);
-      rl_on_new_line();
-      rl_redisplay();
-      
-      delete str;
+		fflush(stdout);
+		rl_on_new_line();
+		rl_redisplay();
+		
+		delete str;
   }
 }
 
@@ -52,11 +52,11 @@ void TerminalIOClass::doWork() {
 }
 
 bool TerminalIOClass::isDataAvailable() {
-  return inputQueue.isDataAvailable();
+  return outputQueue.isDataAvailable();
 }
 
 const string *TerminalIOClass::getData() {
-  return inputQueue.getData();
+  return outputQueue.getData();
 }
 
 

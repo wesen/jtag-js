@@ -67,7 +67,7 @@ AC_CHECK_LIB([iberty], [xmalloc])
 AC_CHECK_LIB([bfd], [bfd_init], , [ac_found_bfd=no])
 AC_CHECK_LIB([usb], [usb_get_string_simple])
 AC_CHECK_LIB([readline], [readline])
-
+AC_CHECK_LIB([js], [JS_NewContext])
 
 sinclude(acx_pthread.m4)
 THREADLIBS=""
@@ -79,6 +79,11 @@ ACX_PTHREAD([THREADLIBS="$PTHREAD_LIBS "
 if test "x$ac_found_bfd" = "xno"; then
   AC_MSG_ERROR([You need to install libbfd.a from binutils.])
 fi
+
+if test "x$ac_found_js" = "xno"; then
+  AC_MSG_ERROR([You need to install spidermonkey.])
+fi
+
 
 # Checks for header files.
 AC_HEADER_STDC
