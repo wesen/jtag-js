@@ -80,5 +80,8 @@ manuel_SOURCES =	\
 	jtagprog.cc	\
 	jtagrun.cc	\
 	jtagrw.cc	\
-	main2.cc		\
-	utils.cc        
+	main2.cc	\
+	utils.cc        \
+	terminal-io.cc \
+	terminal-io.hh \
+	thread.hh
