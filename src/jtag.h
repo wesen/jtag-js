@@ -595,7 +595,7 @@ typedef struct {
  */
 typedef struct codeToString_s {
   uint8_t code;
-  char *name;
+  const char *name;
 } codeToString_t;
 
 #define countof(arr) (sizeof(arr)/(sizeof(arr[0])))

@@ -51,4 +51,12 @@ void TerminalIOClass::doWork() {
   }
 }
 
+bool TerminalIOClass::isDataAvailable() {
+  return inputQueue.isDataAvailable();
+}
+
+const string *TerminalIOClass::getData() {
+  return inputQueue.getData();
+}
+
 
