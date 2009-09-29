@@ -1,4 +1,5 @@
 *.o
+*#
 avarice
 Makefile
 autoconf.h
