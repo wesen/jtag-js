@@ -185,6 +185,7 @@ void JavaScript::eval(const std::string &str) {
 	} else {
 		JSString *str = JS_ValueToString(cx, rval);
 		if (str != NULL) {
+			// XXX split into chunks of TERMINAL_BUF_SIZE bytes
 			CONSOLE_PRINTF("%s\n", (JS_GetStringBytes(str)));
 		} else {
 			TerminalIOClass::printTerminal("<undefined>\n");

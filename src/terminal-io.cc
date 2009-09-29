@@ -32,7 +32,7 @@ int TerminalIOClass::readlinePoll() {
 	
   while (terminalIO->inputQueue.isDataAvailable()) {
     const string *str = terminalIO->inputQueue.getData();
-    char buf[256];
+    char buf[TERMINAL_BUF_SIZE];
     if (rl_point > 0) {
       snprintf(buf, sizeof(buf), "...\n\n%s", str->c_str());
     } else {

@@ -463,9 +463,6 @@ pid_t jtag::openUSB(const char *jtagDeviceName)
   unixCheck(socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, cpipe) == 0,
 						"cannot create control pipe");
 
-	udev = opendev(jtagDeviceName, emu_type, usb_interface);
-	check(udev != NULL, "USB device not found");
-	
   signal(SIGCHLD, childhandler);
   signal(SIGUSR1, usr1handler);
   switch ((p = fork()))
@@ -476,6 +473,9 @@ pid_t jtag::openUSB(const char *jtagDeviceName)
       close(pype[1]);
       close(cpipe[1]);
 
+			udev = opendev(jtagDeviceName, emu_type, usb_interface);
+			check(udev != NULL, "USB device not found");
+	
       kill(getppid(), SIGUSR1); // tell the parent we are ready to go
 
       usb_daemon(udev, pype[0], cpipe[0], usb_interface);

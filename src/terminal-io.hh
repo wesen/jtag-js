@@ -6,10 +6,12 @@
 
 #include "thread.hh"
 
+#define TERMINAL_BUF_SIZE 4096
+
 #define CONSOLE_PRINTF(fmt...) { \
-	char buf[256]; \
-	snprintf(buf, sizeof(buf), fmt); \
-	TerminalIOClass::printTerminal(buf);	 \
+		char buf[TERMINAL_BUF_SIZE];	 \
+		snprintf(buf, sizeof(buf), fmt);		 \
+		TerminalIOClass::printTerminal(buf); \
 }
 
 class TerminalIOClass : public ThreadedClass {
