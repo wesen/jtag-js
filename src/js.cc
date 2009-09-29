@@ -117,6 +117,10 @@ bool JavaScript::load(const char *filename) {
 	
 	oldopts = JS_GetOptions(cx);
 	JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
+	char cwd[512];
+
+	char *ptr = getcwd(cwd, sizeof(cwd));
+	
 	script = JS_CompileFile(cx, global, filename);
 	if (!script) {
 		ok = JS_FALSE;

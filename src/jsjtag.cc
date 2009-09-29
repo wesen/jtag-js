@@ -7,11 +7,16 @@
 #include "js.hh"
 
 /* read/ write jtag stuff */
+#define JS_JTAGICE_AVAILABLE_CHECK() {                                        \
+   if (!theJtagICE) {                                                         \
+      JS_ReportError(cx, "JTAG ICE not created yet, call jtag.init() first"); \
+      return JS_FALSE;                                                        \
+   }                                                                          \
+}
 
 JSBool jsJtag_getProgramCounter(JSContext *cx, JSObject *obj, uintN argc,
 																jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	unsigned long pc = theJtagICE->getProgramCounter();
 	return JS_NewNumberValue(cx, pc, rval);
@@ -19,8 +24,7 @@ JSBool jsJtag_getProgramCounter(JSContext *cx, JSObject *obj, uintN argc,
 
 JSBool jsJtag_setProgramCounter(JSContext *cx, JSObject *obj, uintN argc,
 																jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	uint32_t pc;
 	if (!JS_ConvertArguments(cx, argc, argv, "u", &pc))
@@ -33,8 +37,7 @@ JSBool jsJtag_setProgramCounter(JSContext *cx, JSObject *obj, uintN argc,
 }
 
 JSBool jsJtag_resetProgram(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	JSBool possibleReset = JS_FALSE;
 	if (!JS_ConvertArguments(cx, argc, argv, "/b", &possibleReset))
@@ -48,8 +51,7 @@ JSBool jsJtag_resetProgram(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 
 JSBool jsJtag_interruptProgram(JSContext *cx, JSObject *obj, uintN argc,
 															 jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	bool ret = theJtagICE->interruptProgram();
 	
@@ -59,8 +61,7 @@ JSBool jsJtag_interruptProgram(JSContext *cx, JSObject *obj, uintN argc,
 
 JSBool jsJtag_resumeProgram(JSContext *cx, JSObject *obj, uintN argc,
 														jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	bool ret = theJtagICE->resumeProgram();
 	
@@ -69,8 +70,7 @@ JSBool jsJtag_resumeProgram(JSContext *cx, JSObject *obj, uintN argc,
 }
 
 JSBool jsJtag_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	// unsigned long addr, unsigned int numBytes, unsigned char buffer[]
 	uint32_t addr;
@@ -96,8 +96,7 @@ JSBool jsJtag_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 }
 
 JSBool jsJtag_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	uint32_t addr;
 	JSObject *arr;
@@ -130,8 +129,7 @@ JSBool jsJtag_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 }
 
 JSBool jsJtag_initJtagBox(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	theJtagICE->initJtagBox();
 	
@@ -142,8 +140,7 @@ JSBool jsJtag_initJtagBox(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 JSBool jsJtag_initJtagOnChipDebugging(JSContext *cx, JSObject *obj,
 																			uintN argc, jsval *argv, jsval *rval) {
 	// XXX add bitrate param
-	if (!theJtagICE)
-		return JS_FALSE;
+  JS_JTAGICE_AVAILABLE_CHECK();
 	
 	theJtagICE->initJtagOnChipDebugging(250000);
 	
@@ -180,146 +177,127 @@ JSBool jsJtag_createJtag(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	}
 }
 
-JSBool jsJtag_enableProgramming(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_enableProgramming(JSContext *cx, JSObject *obj,
+																uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
+
+	theJtagICE->enableProgramming();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_disableProgramming(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_disableProgramming(JSContext *cx, JSObject *obj,
+																 uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
+
+	theJtagICE->disableProgramming();
+	
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_eraseProgramMemory(JSContext *cx, JSObject *obj,
+																 uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
+
+	theJtagICE->eraseProgramMemory();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_eraseProgramMemory(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
+JSBool jsJtag_eraseProgramPage(JSContext *cx, JSObject *obj,
+															 uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
+
+	uint32_t addr;
+
+	if (!JS_ConvertArguments(cx, argc, argv, "u", &addr)) {
 		return JS_FALSE;
+	}
+	theJtagICE->eraseProgramPage(addr);
+	
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_downloadToTarget(JSContext *cx, JSObject *obj,
+															 uintN argc, jsval *argv, jsval *rval) {
+	// XXX
+	JSString *str;
+
+  JS_JTAGICE_AVAILABLE_CHECK();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_eraseProgramPage(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_singleStep(JSContext *cx, JSObject *obj,
+												 uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
+
+	// XXX goes into eventLoop
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_downloadToTarget(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_deleteAllBreakpoints(JSContext *cx, JSObject *obj,
+																	 uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_singleStep(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_deleteBreakpoint(JSContext *cx, JSObject *obj,
+															 uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-/*
-	The input parameter is a string from command-line, as produced by
-	printf("%x", 0xaabbcc );
-**/
-JSBool jsJtag_writeFuses(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_addBreakpoint(JSContext *cx, JSObject *obj,
+														uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_readFuses(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_updateBreakpoints(JSContext *cx, JSObject *obj,
+																uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_writeLockBits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_codeBreakpointAt(JSContext *cx, JSObject *obj,
+															 uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_readLockBits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_codeBreakpointBetween(JSContext *cx, JSObject *obj,
+																		uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-JSBool jsJtag_deleteAllBreakpoints(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
+JSBool jsJtag_stopAt(JSContext *cx, JSObject *obj,
+										 uintN argc, jsval *argv, jsval *rval) {
+  JS_JTAGICE_AVAILABLE_CHECK();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
-
-JSBool jsJtag_deleteBreakpoint(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
-
-	*rval = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-JSBool jsJtag_addBreakpoint(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
-
-	*rval = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-JSBool jsJtag_updateBreakpoints(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
-
-	*rval = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-JSBool jsJtag_codeBreakpointAt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
-
-	*rval = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-JSBool jsJtag_codeBreakpointBetween(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
-
-	*rval = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-JSBool jsJtag_stopAt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	if (!theJtagICE)
-		return JS_FALSE;
-
-	*rval = JSVAL_VOID;
-	return JS_TRUE;
-}
-
 
 static JSFunctionSpec jsjtag_functions[] = {
 	{ "init", jsJtag_createJtag, 0, 0, 0},
@@ -341,11 +319,6 @@ static JSFunctionSpec jsjtag_functions[] = {
 	{ "eraseProgramPage", jsJtag_eraseProgramPage, 1, 0, 0 },
 	{ "downloadToTarget", jsJtag_downloadToTarget, 3, 0, 0 },
 
-	{ "writeFuses", jsJtag_writeFuses, 1, 0, 0 },
-	{ "readFuses", jsJtag_readFuses, 0, 0, 0 },
-	{ "writeLockBits", jsJtag_writeLockBits, 1, 0, 0 },
-	{ "readLockBits", jsJtag_readLockBits, 0, 0, 0 },
-
 	{ "deleteAllBreakpoints", jsJtag_deleteAllBreakpoints, 0, 0, 0 },
 	{ "deleteBreakpoint", jsJtag_deleteBreakpoint, 3, 0, 0 },
 	{ "addBreakpoint", jsJtag_addBreakpoint, 3, 0, 0 },
@@ -357,7 +330,6 @@ static JSFunctionSpec jsjtag_functions[] = {
 };
 
 /* properties */
-
 JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
 	if (JSVAL_IS_STRING(idval)) {
 		JSString *ustr = JSVAL_TO_STRING(idval);
@@ -395,7 +367,39 @@ JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) 
 }
 
 JSBool jsJtag_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
-	return JS_FALSE;
+	if (JSVAL_IS_STRING(idval)) {
+		JSString *ustr = JSVAL_TO_STRING(idval);
+		char *str = JS_GetStringBytes(ustr);
+		if (!strcmp(str, "deviceName")) {
+			if (!theJtagICE)
+				return JS_FALSE;
+	
+			*vp = STRING_TO_JSVAL(JS_NewString(cx, theJtagICE->device_name,
+																				 strlen(theJtagICE->device_name)));
+			return JS_TRUE;
+		} else if (!strcmp(str, "programmingEnabled")) {
+			if (!theJtagICE)
+				return JS_FALSE;
+	
+			*vp = BOOLEAN_TO_JSVAL(theJtagICE->programmingEnabled);
+			return JS_TRUE;
+		} else if (!strcmp(str, "events")) {
+			if (!theJtagICE)
+				return JS_FALSE;
+	
+			if (JSVAL_IS_STRING(*vp)) {
+				JSString *ustr = JSVAL_TO_STRING(idval);
+				char *str = JS_GetStringBytes(ustr);
+				theJtagICE->parseEvents(str);
+			} else {
+				return JS_FALSE;
+			}
+		}
+
+		return JS_TRUE;
+	} else {
+		return JS_TRUE;
+	}
 }
 
 
