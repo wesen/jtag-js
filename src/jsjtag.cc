@@ -139,10 +139,14 @@ JSBool jsJtag_initJtagBox(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 
 JSBool jsJtag_initJtagOnChipDebugging(JSContext *cx, JSObject *obj,
 																			uintN argc, jsval *argv, jsval *rval) {
-	// XXX add bitrate param
   JS_JTAGICE_AVAILABLE_CHECK();
+
+	uint32_t bitRate;
+
+	if (!JS_ConvertArguments(cx, argc, argv, "u", &bitRate))
+		return JS_FALSE;
 	
-	theJtagICE->initJtagOnChipDebugging(250000);
+	theJtagICE->initJtagOnChipDebugging(bitRate);
 	
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
@@ -247,6 +251,8 @@ JSBool jsJtag_deleteAllBreakpoints(JSContext *cx, JSObject *obj,
 																	 uintN argc, jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
 
+	theJtagICE->deleteAllBreakpoints();
+
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -255,7 +261,16 @@ JSBool jsJtag_deleteBreakpoint(JSContext *cx, JSObject *obj,
 															 uintN argc, jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
 
-	*rval = JSVAL_VOID;
+	uint32_t breakpointAddress;
+	uint32_t breakpointType;
+	uint32_t length;
+
+	if (!JS_ConvertArguments(cx, argc, argv, "uuu", &breakpointAddress, &breakpointType, &length))
+		return JS_FALSE;
+
+	bool ret = theJtagICE->deleteBreakpoint(breakpointAddress, (bpType)breakpointType, length);
+	
+	*rval = BOOLEAN_TO_JSVAL(ret);
 	return JS_TRUE;
 }
 
@@ -263,13 +278,24 @@ JSBool jsJtag_addBreakpoint(JSContext *cx, JSObject *obj,
 														uintN argc, jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
 
-	*rval = JSVAL_VOID;
+	uint32_t breakpointAddress;
+	uint32_t breakpointType;
+	uint32_t length;
+
+	if (!JS_ConvertArguments(cx, argc, argv, "uuu", &breakpointAddress, &breakpointType, &length))
+		return JS_FALSE;
+
+	bool ret = theJtagICE->addBreakpoint(breakpointAddress, (bpType)breakpointType, length);
+
+	*rval = BOOLEAN_TO_JSVAL(ret);
 	return JS_TRUE;
 }
 
 JSBool jsJtag_updateBreakpoints(JSContext *cx, JSObject *obj,
 																uintN argc, jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
+
+	theJtagICE->updateBreakpoints();
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
@@ -279,7 +305,14 @@ JSBool jsJtag_codeBreakpointAt(JSContext *cx, JSObject *obj,
 															 uintN argc, jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
 
-	*rval = JSVAL_VOID;
+	uint32_t breakpointAddress;
+
+	if (!JS_ConvertArguments(cx, argc, argv, "u", &breakpointAddress))
+		return JS_FALSE;
+
+	bool ret = theJtagICE->codeBreakpointAt(breakpointAddress);
+	
+	*rval = BOOLEAN_TO_JSVAL(ret);
 	return JS_TRUE;
 }
 
@@ -287,7 +320,15 @@ JSBool jsJtag_codeBreakpointBetween(JSContext *cx, JSObject *obj,
 																		uintN argc, jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
 
-	*rval = JSVAL_VOID;
+	uint32_t addr1;
+	uint32_t addr2;
+
+	if (!JS_ConvertArguments(cx, argc, argv, "uu", &addr1, &addr2))
+		return JS_FALSE;
+
+	bool ret = theJtagICE->codeBreakpointBetween(addr1, addr2);
+	
+	*rval = BOOLEAN_TO_JSVAL(ret);
 	return JS_TRUE;
 }
 
@@ -295,7 +336,12 @@ JSBool jsJtag_stopAt(JSContext *cx, JSObject *obj,
 										 uintN argc, jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
 
-	*rval = JSVAL_VOID;
+	uint32_t breakpointAddress;
+
+	if (!JS_ConvertArguments(cx, argc, argv, "u", &breakpointAddress))
+		return JS_FALSE;
+
+	bool ret = theJtagICE->stopAt(breakpointAddress);
 	return JS_TRUE;
 }
 
