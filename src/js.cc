@@ -130,7 +130,8 @@ bool JavaScript::load(const char *filename) {
 		if (ptr && dir) {
 			chdir(dir);
 		}
-		CONSOLE_PRINTF("loading file %s\n", filename);
+		char realpathbuf[4096];
+		CONSOLE_PRINTF("loading file \"%s\"\n", realpath(filename, realpathbuf));
 		ok = JS_ExecuteScript(cx, global, script, &result);
 		JS_DestroyScript(cx, script);
 		if (ptr && dir) {
