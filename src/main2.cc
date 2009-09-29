@@ -14,6 +14,7 @@
 TerminalIOClass terminal;
 JavaScript myJS;
 
+JavaScript *theJS = &myJS;
 jtag *theJtagICE = NULL;
 
 void signal_handler(int signal) {

@@ -86,4 +86,6 @@ manuel_SOURCES =	\
 	terminal-io.hh \
 	thread.hh\
 	js.cc \
-	js.hh
+	js.hh \
+	jsjtag.cc \
+	jsjtag.hh

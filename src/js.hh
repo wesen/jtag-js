@@ -19,8 +19,14 @@ public:
 	JavaScript();
 	~JavaScript();
 
+	bool load(const char *filename);
+
 	bool init();
 	void eval(const std::string &str);
+	bool jsJtag_registerClass();
 };
+
+extern JavaScript *theJS;
+
 
 #endif
