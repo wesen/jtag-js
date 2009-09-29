@@ -30,7 +30,7 @@ int TerminalIOClass::readlinePoll() {
 		return 0;
 	}
 	
-  if (terminalIO->inputQueue.isDataAvailable()) {
+  while (terminalIO->inputQueue.isDataAvailable()) {
     const string *str = terminalIO->inputQueue.getData();
     char buf[256];
     if (rl_point > 0) {
@@ -40,12 +40,15 @@ int TerminalIOClass::readlinePoll() {
     }
     
     printf("%s", buf);
+
+		delete str;
+
 		fflush(stdout);
 		rl_on_new_line();
 		rl_redisplay();
+	}
+	
 		
-		delete str;
-  }
 	return 0;
 }
 
