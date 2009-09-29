@@ -178,20 +178,181 @@ JSBool jsJtag_createJtag(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		fprintf(stderr, "Cannot initialize JTAG ICE\n");
 		return JS_FALSE;
 	}
-
 }
+
+JSBool jsJtag_enableProgramming(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_disableProgramming(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_eraseProgramMemory(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_eraseProgramPage(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_downloadToTarget(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_singleStep(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+/*
+	The input parameter is a string from command-line, as produced by
+	printf("%x", 0xaabbcc );
+**/
+JSBool jsJtag_writeFuses(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_readFuses(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_writeLockBits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_readLockBits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_deleteAllBreakpoints(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_deleteBreakpoint(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_addBreakpoint(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_updateBreakpoints(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_codeBreakpointAt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_codeBreakpointBetween(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_stopAt(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
 
 static JSFunctionSpec jsjtag_functions[] = {
 	{ "init", jsJtag_createJtag, 0, 0, 0},
 	{ "connect", jsJtag_initJtagBox, 0, 0, 0 },
 	{ "initOnChipDebugging", jsJtag_initJtagOnChipDebugging, 0, 0, 0 },
+
 	{ "getPC", jsJtag_getProgramCounter, 0, 0, 0 },
 	{ "setPC", jsJtag_setProgramCounter, 1, 0, 0 },
 	{ "reset", jsJtag_resetProgram, 0, 0, 0 },
 	{ "interrupt", jsJtag_interruptProgram, 0, 0, 0 },
 	{ "resume", jsJtag_resumeProgram, 0, 0, 0 },
+
 	{ "read", jsJtag_read, 2, 0, 0 },
 	{ "write", jsJtag_write, 2, 0, 0 },
+
+	{ "enableProgramming", jsJtag_enableProgramming, 0, 0, 0 },
+	{ "disableProgramming", jsJtag_disableProgramming, 0, 0, 0 },
+	{ "eraseProgramMemory", jsJtag_eraseProgramMemory, 0, 0, 0 },
+	{ "eraseProgramPage", jsJtag_eraseProgramPage, 1, 0, 0 },
+	{ "downloadToTarget", jsJtag_downloadToTarget, 3, 0, 0 },
+
+	{ "writeFuses", jsJtag_writeFuses, 1, 0, 0 },
+	{ "readFuses", jsJtag_readFuses, 0, 0, 0 },
+	{ "writeLockBits", jsJtag_writeLockBits, 1, 0, 0 },
+	{ "readLockBits", jsJtag_readLockBits, 0, 0, 0 },
+
+	{ "deleteAllBreakpoints", jsJtag_deleteAllBreakpoints, 0, 0, 0 },
+	{ "deleteBreakpoint", jsJtag_deleteBreakpoint, 3, 0, 0 },
+	{ "addBreakpoint", jsJtag_addBreakpoint, 3, 0, 0 },
+	{ "updateBreakpoints", jsJtag_updateBreakpoints, 0, 0, 0 },
+	{ "codeBreakpointAt", jsJtag_codeBreakpointAt, 1, 0, 0 },
+	{ "codeBreakpointBetween", jsJtag_codeBreakpointBetween, 2, 0, 0 },
+	{ "stopAt", jsJtag_stopAt, 1, 0, 0 },
 	{ 0 }
 };
 
