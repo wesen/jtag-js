@@ -10,9 +10,6 @@ config-aux/config.guess
 config-aux/config.sub
 aclocal.m4
 avarice.spec
-config-aux/depcomp
-config-aux/install-sh
-config-aux/missing
 configure
 doc/Makefile.in
 scripts/Makefile.in
