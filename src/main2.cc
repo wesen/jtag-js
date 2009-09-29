@@ -26,6 +26,11 @@ int main(int argc, char *argv[]) {
 	debugMode = true;
 
 	myJS.init();
+
+	for (int i = 1; i < argc; i++) {
+		printf("loading %s\n", argv[i]);
+		myJS.load(argv[i]);
+	}
 	terminal.go();
 	
 	for (;;) {
