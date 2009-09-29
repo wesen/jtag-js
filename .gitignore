@@ -8,11 +8,8 @@ Makefile.in
 autom4te.cache/
 config-aux/config.guess
 config-aux/config.sub
-Makefile.in
 aclocal.m4
-acx_pthread.m4
 avarice.spec
-avarice.spec.in
 config-aux/depcomp
 config-aux/install-sh
 config-aux/missing
