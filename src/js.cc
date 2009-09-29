@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <libgen.h>
 #include <readline/readline.h>
 
 #include "avarice.h"
@@ -120,13 +121,21 @@ bool JavaScript::load(const char *filename) {
 	char cwd[512];
 
 	char *ptr = getcwd(cwd, sizeof(cwd));
-	
+	char *dir = dirname((char *)filename);
+
 	script = JS_CompileFile(cx, global, filename);
 	if (!script) {
 		ok = JS_FALSE;
 	} else {
+		if (ptr && dir) {
+			chdir(dir);
+		}
+		CONSOLE_PRINTF("loading file %s\n", filename);
 		ok = JS_ExecuteScript(cx, global, script, &result);
 		JS_DestroyScript(cx, script);
+		if (ptr && dir) {
+			chdir(ptr);
+		}
 	}
 	JS_SetOptions(cx, oldopts);
 	if (!ok)
