@@ -1,15 +1,27 @@
+#include <string.h>
+
 #include "avarice.h"
 #include "jtag.h"
+#include "jtag2.h"
 
 #include "js.hh"
 
+/* read/ write jtag stuff */
 
-JSBool jsJtag_getProgramCounter(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool jsJtag_getProgramCounter(JSContext *cx, JSObject *obj, uintN argc,
+																jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+	
 	unsigned long pc = theJtagICE->getProgramCounter();
 	return JS_NewNumberValue(cx, pc, rval);
 }
 
-JSBool jsJtag_setProgramCounter(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool jsJtag_setProgramCounter(JSContext *cx, JSObject *obj, uintN argc,
+																jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+	
 	uint32_t pc;
 	if (!JS_ConvertArguments(cx, argc, argv, "u", &pc))
 		return JS_FALSE;
@@ -21,6 +33,9 @@ JSBool jsJtag_setProgramCounter(JSContext *cx, JSObject *obj, uintN argc, jsval 
 }
 
 JSBool jsJtag_resetProgram(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+	
 	JSBool possibleReset = JS_FALSE;
 	if (!JS_ConvertArguments(cx, argc, argv, "/b", &possibleReset))
 		return JS_FALSE;
@@ -31,14 +46,22 @@ JSBool jsJtag_resetProgram(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	return JS_TRUE;
 }
 
-JSBool jsJtag_interruptProgram(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool jsJtag_interruptProgram(JSContext *cx, JSObject *obj, uintN argc,
+															 jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+	
 	bool ret = theJtagICE->interruptProgram();
 	
 	*rval = BOOLEAN_TO_JSVAL(ret);
 	return JS_TRUE;
 }
 
-JSBool jsJtag_resumeProgram(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool jsJtag_resumeProgram(JSContext *cx, JSObject *obj, uintN argc,
+														jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+	
 	bool ret = theJtagICE->resumeProgram();
 	
 	*rval = BOOLEAN_TO_JSVAL(ret);
@@ -46,6 +69,9 @@ JSBool jsJtag_resumeProgram(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 }
 
 JSBool jsJtag_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+	
 	// unsigned long addr, unsigned int numBytes, unsigned char buffer[]
 	uint32_t addr;
 	uint32_t numBytes;
@@ -70,6 +96,9 @@ JSBool jsJtag_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval 
 }
 
 JSBool jsJtag_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+	
 	uint32_t addr;
 	JSObject *arr;
 
@@ -100,7 +129,62 @@ JSBool jsJtag_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 	return JS_TRUE;
 }
 
+JSBool jsJtag_initJtagBox(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	if (!theJtagICE)
+		return JS_FALSE;
+	
+	theJtagICE->initJtagBox();
+	
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_initJtagOnChipDebugging(JSContext *cx, JSObject *obj,
+																			uintN argc, jsval *argv, jsval *rval) {
+	// XXX add bitrate param
+	if (!theJtagICE)
+		return JS_FALSE;
+	
+	theJtagICE->initJtagOnChipDebugging(250000);
+	
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+JSBool jsJtag_createJtag(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	printf("hello creation\n");
+	bool isXmega = false;
+	bool isDragon = false;
+	bool applyNsrst = false;
+
+	try {
+		printf("before creation\n");
+		theJtagICE = new jtag2("usb", NULL, false, isDragon, applyNsrst, isXmega);
+		theJtagICE->dchain.units_before = 0;
+		theJtagICE->dchain.units_after = 0;
+		theJtagICE->dchain.bits_before = 0;
+		theJtagICE->dchain.bits_after = 0;
+
+		printf("after creation\n");
+		theJtagICE->initJtagBox();
+		theJtagICE->startPolling();
+		
+		*rval = JSVAL_VOID;
+		return JS_TRUE;
+	} catch (const char *msg) {
+		fprintf(stderr, "%s\n", msg);
+		return JS_FALSE;
+	} catch (...) {
+		fprintf(stderr, "Cannot initialize JTAG ICE\n");
+		return JS_FALSE;
+	}
+
+}
+
 static JSFunctionSpec jsjtag_functions[] = {
+	{ "init", jsJtag_createJtag, 0, 0, 0},
+	{ "connect", jsJtag_initJtagBox, 0, 0, 0 },
+	{ "initOnChipDebugging", jsJtag_initJtagOnChipDebugging, 0, 0, 0 },
 	{ "getPC", jsJtag_getProgramCounter, 0, 0, 0 },
 	{ "setPC", jsJtag_setProgramCounter, 1, 0, 0 },
 	{ "reset", jsJtag_resetProgram, 0, 0, 0 },
@@ -111,10 +195,53 @@ static JSFunctionSpec jsjtag_functions[] = {
 	{ 0 }
 };
 
+/* properties */
+
+JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
+	if (JSVAL_IS_STRING(idval)) {
+		JSString *ustr = JSVAL_TO_STRING(idval);
+		char *str = JS_GetStringBytes(ustr);
+		if (!strcmp(str, "deviceName")) {
+			if (!theJtagICE)
+				return JS_FALSE;
+	
+			*vp = STRING_TO_JSVAL(JS_NewString(cx, theJtagICE->device_name,
+																				 strlen(theJtagICE->device_name)));
+			return JS_TRUE;
+		} else if (!strcmp(str, "programmingEnabled")) {
+			if (!theJtagICE)
+				return JS_FALSE;
+	
+			*vp = BOOLEAN_TO_JSVAL(theJtagICE->programmingEnabled);
+			return JS_TRUE;
+		} else if (!strcmp(str, "events")) {
+			if (!theJtagICE)
+				return JS_FALSE;
+	
+			//			if (JSVAL_IS_STRING(*vp)) {
+			//				JSString *ustr = JSVAL_TO_STRING(idval);
+			//				char *str = JS_GetStringBytes(ustr);
+			//				theJtagICE->parseEvents(str);
+			//			} else {
+			//				return JS_FALSE;
+			//			}
+		}
+
+		return JS_TRUE;
+	} else {
+		return JS_TRUE;
+	}
+}
+
+JSBool jsJtag_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
+	return JS_FALSE;
+}
+
+
 /* class definitions */
 JSClass JavaScript::jtag_class = {
 	"jtag", 0,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, jsJtag_getProperty, jsJtag_setProperty,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };

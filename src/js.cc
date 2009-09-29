@@ -155,6 +155,8 @@ bool JavaScript::init() {
 	JS_DefineProperty(cx, global, "debug", BOOLEAN_TO_JSVAL(debugMode),
 										jsGlobal_getDebugMode, jsGlobal_setDebugMode, JSPROP_PERMANENT);
 
+	jsJtag_registerClass();
+
 	return true;
 }
 

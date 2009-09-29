@@ -85,7 +85,9 @@ static void check_1(bool printUnixError, const char *fmt, va_list args)
     gdbOut("\n");
 #endif
 
-    exit(EXIT_FAILURE);
+		// XXX throw javascript error or so
+		//    exit(EXIT_FAILURE);
+		fprintf(stderr, "XXX EXIT FAILURE\n");
 }
 
 void check(bool ok, const char *fmt, ...)
@@ -93,7 +95,7 @@ void check(bool ok, const char *fmt, ...)
     va_list args;
     va_start(args, fmt);
     if (!ok)
-	check_1(false, fmt, args);
+			check_1(false, fmt, args);
     va_end(args);
 }
 
