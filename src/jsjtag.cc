@@ -153,30 +153,35 @@ JSBool jsJtag_initJtagOnChipDebugging(JSContext *cx, JSObject *obj,
 }
 
 JSBool jsJtag_createJtag(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	printf("hello creation\n");
 	bool isXmega = false;
 	bool isDragon = false;
 	bool applyNsrst = false;
 
 	try {
-		printf("before creation\n");
 		theJtagICE = new jtag2("usb", NULL, false, isDragon, applyNsrst, isXmega);
 		theJtagICE->dchain.units_before = 0;
 		theJtagICE->dchain.units_after = 0;
 		theJtagICE->dchain.bits_before = 0;
 		theJtagICE->dchain.bits_after = 0;
 
-		printf("after creation\n");
 		theJtagICE->initJtagBox();
 		theJtagICE->startPolling();
 		
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	} catch (const char *msg) {
-		fprintf(stderr, "%s\n", msg);
+		JS_ReportError(cx, "Cannot initialize JTAG: %p, %s\n", theJtagICE, msg);
+		if (theJtagICE != NULL) {
+			delete theJtagICE;
+			theJtagICE = NULL;
+		}
 		return JS_FALSE;
 	} catch (...) {
-		fprintf(stderr, "Cannot initialize JTAG ICE\n");
+		JS_ReportError(cx, "Cannot initialize JTAG: Unknown error\n");
+		if (theJtagICE != NULL) {
+			delete theJtagICE;
+			theJtagICE = NULL;
+		}
 		return JS_FALSE;
 	}
 }
@@ -458,7 +463,7 @@ JSClass JavaScript::jtag_class = {
 };
 
 bool JavaScript::jsJtag_registerClass() {
-	jtagObject = JS_DefineObject(cx, global, "jtag", &jtag_class, NULL, 0);
+	jtagObject = JS_DefineObject(cx, global, "jtag", &jtag_class, NULL, JSPROP_ENUMERATE);
 	if (jtagObject == NULL)
 		return false;
 	if (!JS_DefineFunctions(cx, jtagObject, jsjtag_functions))

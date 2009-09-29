@@ -30,6 +30,9 @@ typedef unsigned char uchar;
 /** true iff --debug option specified **/
 extern bool debugMode;
 
+/** added quietMode mainly to silence statusOut when using javascript console */
+extern bool quietMode;
+
 /** true if interrupts should be stepped over when stepping */
 extern bool ignoreInterrupts;
 

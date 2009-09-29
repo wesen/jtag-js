@@ -24,11 +24,11 @@ void signal_handler(int signal) {
 
 int main(int argc, char *argv[]) {
 	debugMode = true;
+	quietMode = true;
 
 	myJS.init();
 
 	for (int i = 1; i < argc; i++) {
-		printf("loading %s\n", argv[i]);
 		myJS.load(argv[i]);
 	}
 	terminal.go();
@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
 	    delete str;
 	  }
 	}
+	printf("cleaning up...\n");
 	rl_cleanup_after_signal();
 
 	return 0;

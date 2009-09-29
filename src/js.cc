@@ -176,7 +176,10 @@ bool JavaScript::init() {
 void JavaScript::eval(const std::string &str) {
 	const char *src = str.c_str();
 	jsval rval;
-	if (!JS_EvaluateScript(cx, JS_GetGlobalObject(cx), src, strlen(src), __FILE__, __LINE__, &rval)) {
+
+	JSBool ret = JS_EvaluateScript(cx, JS_GetGlobalObject(cx), src, strlen(src), __FILE__, __LINE__, &rval);
+
+	if (!ret) {
 		return;
 	} else {
 		JSString *str = JS_ValueToString(cx, rval);

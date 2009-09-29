@@ -28,6 +28,7 @@
 #include "remote.h"
 
 bool debugMode = false;
+bool quietMode = false;
 
 void vdebugOut(const char *fmt, va_list args)
 {
@@ -70,13 +71,22 @@ static void check_1(bool printUnixError, const char *fmt, va_list args)
     va_list copy_args;
 
     va_copy(copy_args, args);
-    vstatusOut(fmt, copy_args);
+
+		if (!quietMode) {
+			vstatusOut(fmt, copy_args);
+		}
 #else
-    vstatusOut(fmt, args);
+		if (!quietMode) {
+			vstatusOut(fmt, args);
+		}
 #endif
-    if (printUnixError)
-	statusOut(": %s", strerror(en));
-    statusOut("\n");
+
+		if (!quietMode) {
+			if (printUnixError) {
+				statusOut(": %s", strerror(en));
+			}
+			statusOut("\n");
+		}
 
 #if 0 // GDB CODE XXX
     vgdbOut(fmt, args);
@@ -85,13 +95,14 @@ static void check_1(bool printUnixError, const char *fmt, va_list args)
     gdbOut("\n");
 #endif
 
-		// XXX throw javascript error or so
-		//    exit(EXIT_FAILURE);
-		fprintf(stderr, "XXX EXIT FAILURE\n");
+		static char buf[256];
+		vsnprintf(buf, sizeof(buf), fmt, args);
+		throw buf;
 }
 
 void check(bool ok, const char *fmt, ...)
 {
+	// XXX get all instances of check in the program to add catch/tries
     va_list args;
     va_start(args, fmt);
     if (!ok)
