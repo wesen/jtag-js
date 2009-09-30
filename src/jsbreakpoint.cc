@@ -16,14 +16,6 @@
 	return JS_FALSE; \
 	}
 
-JSBool jsBreakpoint_update(JSContext *cx, JSObject *obj, uintN argc,
-													 jsval *argv, jsval *rval) {
-	JS_GET_PRIVATE_BREAKPOINT();
-	
-	JS_REPORT_UNIMPLEMENTED();
-	return JS_FALSE;
-}
-
 JSBool jsBreakpoint_enable(JSContext *cx, JSObject *obj, uintN argc,
 													 jsval *argv, jsval *rval) {
 	JS_GET_PRIVATE_BREAKPOINT();
@@ -58,7 +50,6 @@ JSBool jsBreakpoint_delete(JSContext *cx, JSObject *obj, uintN argc,
 
 /* breakpoint javascript native definitions */
 static JSFunctionSpec jsbreakpoint_functions[] = {
-	{ "update",  jsBreakpoint_update,  0, JSPROP_ENUMERATE, 0 },
 	{ "enable",  jsBreakpoint_enable,  0, JSPROP_ENUMERATE, 0 },
 	{ "disable", jsBreakpoint_disable, 0, JSPROP_ENUMERATE, 0 },
 	{ "add",     jsBreakpoint_add,     0, JSPROP_ENUMERATE, 0 },

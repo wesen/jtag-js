@@ -61,7 +61,7 @@ void jtag1::deleteAllBreakpoints(void)
 
 bool jtag1::stopAt(unsigned int address)
 {
-    uchar zero = 0;
+    uint8_t zero = 0;
     jtagWrite(BREAKPOINT_SPACE_ADDR_OFFSET + address / 2, 1, &zero);
 }
 
@@ -161,7 +161,7 @@ void jtag1::updateBreakpoints(void)
     // note: BP1 only supports code space breakpoints.
     if (bpC < numBreakpointsCode)
     {
-	uchar zero = 0;
+	uint8_t zero = 0;
 	jtagWrite(BREAKPOINT_SPACE_ADDR_OFFSET + bpCode[bpC++].address, 1, &zero);
     }
 
@@ -171,7 +171,7 @@ void jtag1::updateBreakpoints(void)
     // note: BP1 only supports code space breakpoints.
     if (bpC < numBreakpointsCode)
     {
-	uchar one = 1;
+	uint8_t one = 1;
 	jtagWrite(BREAKPOINT_SPACE_ADDR_OFFSET + bpCode[bpC++].address, 1, &one);
     }
 

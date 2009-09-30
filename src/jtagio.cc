@@ -47,7 +47,7 @@
     JTAG_R_RESP_OK returns true, otherwise returns false.
 **/
  
-SendResult jtag1::sendJtagCommand(uchar *command, int commandSize, int *tries)
+SendResult jtag1::sendJtagCommand(uint8_t *command, int commandSize, int *tries)
 {
     check((*tries)++ < MAX_JTAG_COMM_ATTEMPS,
 	      "JTAG ICE: Cannot synchronise");
@@ -75,7 +75,7 @@ SendResult jtag1::sendJtagCommand(uchar *command, int commandSize, int *tries)
     // ignore it)
     for (;;)
       {
-	uchar ok;
+	uint8_t ok;
 	count = timeout_read(&ok, 1, JTAG_RESPONSE_TIMEOUT);
 	jtagCheck(count);
 
@@ -118,15 +118,15 @@ SendResult jtag1::sendJtagCommand(uchar *command, int commandSize, int *tries)
     Returns a dynamically allocated buffer containing the reponse (caller
     must free) otherwise
 **/
-uchar *jtag1::getJtagResponse(int responseSize)
+uint8_t *jtag1::getJtagResponse(int responseSize)
 {
-    uchar *response;
+    uint8_t *response;
     int numCharsRead;
 
     // Increase by 1 because of the zero termination.
     //
     // note: IT IS THE CALLERS RESPONSIBILITY TO delete() THIS.
-    response = new uchar[responseSize + 1];
+    response = new uint8_t[responseSize + 1];
     response[responseSize] = '\0';
 
     numCharsRead = timeout_read(response, responseSize,
@@ -150,16 +150,16 @@ uchar *jtag1::getJtagResponse(int responseSize)
     return response;
 }
 
-uchar *jtag1::doJtagCommand(uchar *command, int  commandSize, int  responseSize)
+uint8_t *jtag1::doJtagCommand(uint8_t *command, int  commandSize, int  responseSize)
 {
     int tryCount = 0;
 
     // Send command until we get RESP_OK
     for (;;)
     {
-	uchar *response;
-	static uchar sync[] = { ' ' };
-	static uchar stop[] = { 'S', JTAG_EOM };
+	uint8_t *response;
+	static uint8_t sync[] = { ' ' };
+	static uint8_t stop[] = { 'S', JTAG_EOM };
 
 	switch (sendJtagCommand(command, commandSize, &tryCount))
 	{
@@ -190,8 +190,8 @@ uchar *jtag1::doJtagCommand(uchar *command, int  commandSize, int  responseSize)
 
 bool jtag1::doSimpleJtagCommand(unsigned char cmd, int responseSize)
 {
-    uchar *response;
-    uchar command[] = { cmd, JTAG_EOM };
+    uint8_t *response;
+    uint8_t command[] = { cmd, JTAG_EOM };
     bool result;
 
     response = doJtagCommand(command, sizeof command, responseSize);
@@ -206,7 +206,7 @@ bool jtag1::doSimpleJtagCommand(unsigned char cmd, int responseSize)
 /** Set PC and JTAG ICE bitrate to BIT_RATE_xxx specified by 'newBitRate' **/
 void jtag1::changeBitRate(int newBitRate)
 {
-    uchar jtagrate;
+    uint8_t jtagrate;
 
     switch (newBitRate) {
     case 9600:
@@ -232,8 +232,8 @@ void jtag1::changeBitRate(int newBitRate)
 /** Set the JTAG ICE device descriptor data for specified device type **/
 void jtag1::setDeviceDescriptor(jtag_device_def_type *dev)
 {
-    uchar *response = NULL;
-    uchar *command = (uchar *)(&dev->dev_desc1);
+    uint8_t *response = NULL;
+    uint8_t *command = (uint8_t *)(&dev->dev_desc1);
 
     response = doJtagCommand(command, sizeof dev->dev_desc1, 1);
     check(response[0] == JTAG_R_OK,
@@ -246,8 +246,8 @@ void jtag1::setDeviceDescriptor(jtag_device_def_type *dev)
     (used at startup to check sync only) **/
 bool jtag1::checkForEmulator(void)
 {
-    uchar *response;
-    uchar command[] = { 'S', JTAG_EOM };
+    uint8_t *response;
+    uint8_t command[] = { 'S', JTAG_EOM };
     bool result;
     int tries = 0;
 
@@ -276,7 +276,7 @@ bool jtag1::synchroniseAt(int bitrate)
 	// But if another char is sent, the JTAG seems to go in to some 
 	// internal mode. 'SE  ' takes it out of there, apparently (sometimes
 	// 'E  ' is enough, but not always...)
-	sendJtagCommand((uchar *)"SE  ", 4, &tries);
+	sendJtagCommand((uint8_t *)"SE  ", 4, &tries);
 	usleep(2 * JTAG_COMM_TIMEOUT); // let rest of response come before we ignore it
 	jtagCheck(tcflush(jtagBox, TCIFLUSH));
 	if (checkForEmulator())
@@ -402,11 +402,11 @@ void jtag1::initJtagBox(void)
     startJtagLink();
     changeBitRate(115200);
 
-    uchar hw_ver = getJtagParameter(JTAG_P_HW_VERSION);
+    uint8_t hw_ver = getJtagParameter(JTAG_P_HW_VERSION);
     console->statusOut("Hardware Version: 0x%02x\n", hw_ver);
     //check(hw_ver == 0xc0, "JTAG ICE: Unknown hardware version");
 
-    uchar sw_ver = getJtagParameter(JTAG_P_SW_VERSION);
+    uint8_t sw_ver = getJtagParameter(JTAG_P_SW_VERSION);
     console->statusOut("Software Version: 0x%02x\n", sw_ver);
 
     interruptProgram();
@@ -424,7 +424,7 @@ void jtag1::initJtagOnChipDebugging(unsigned long bitrate)
 {
     console->statusOut("Preparing the target device for On Chip Debugging.\n");
 
-    uchar br;
+    uint8_t br;
     if (bitrate >= 1000000UL)
 	br = JTAG_BITRATE_1_MHz;
     else if (bitrate >= 500000)
@@ -441,7 +441,7 @@ void jtag1::initJtagOnChipDebugging(unsigned long bitrate)
     enableProgramming();
 
     // Ensure that all lock bits are "unlocked" ie all 1's
-    uchar *lockBits = 0;
+    uint8_t *lockBits = 0;
     lockBits = jtagRead(LOCK_SPACE_ADDR_OFFSET + 0, 1);
 
     if (*lockBits != LOCK_BITS_ALL_UNLOCKED)
@@ -460,7 +460,7 @@ void jtag1::initJtagOnChipDebugging(unsigned long bitrate)
     }
 
     // Ensure on-chip debug enable fuse is enabled ie '0'
-    uchar *fuseBits = 0;
+    uint8_t *fuseBits = 0;
     console->statusOut("\nEnabling on-chip debugging:\n");
     fuseBits = jtagRead(FUSE_SPACE_ADDR_OFFSET + 0, 3);
 

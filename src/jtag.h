@@ -667,7 +667,7 @@ class jtag
   unsigned int get_page_size(BFDmemoryType memtype);
 
   // protected debugging helper function
-  const char *codeToString(uchar code, codeToString_t *arr, int max, const char *defaultName);
+  const char *codeToString(uint8_t code, codeToString_t *arr, int max, const char *defaultName);
   
   
   public:
@@ -676,8 +676,8 @@ class jtag
   virtual ~jtag(void);
 
   // Debugging helper functions
-  const char *jtagCmdToString(uchar command);
-  const char *jtagRspToString(uchar rsp);
+  const char *jtagCmdToString(uint8_t command);
+  const char *jtagRspToString(uint8_t rsp);
   
   // Basic JTAG I/O
   // -------------

@@ -90,9 +90,9 @@ void jtag2::eraseProgramMemory(void)
 
 void jtag2::eraseProgramPage(unsigned long address)
 {
-    uchar *response;
+    uint8_t *response;
     int respSize;
-    uchar command[5] = { CMND_ERASEPAGE_SPM };
+    uint8_t command[5] = { CMND_ERASEPAGE_SPM };
 
     command[1] = (address & 0xff000000) >> 24;
     command[2] = (address & 0xff0000) >> 16;
@@ -195,7 +195,7 @@ static void jtag_create_image(bfd *file, asection *section,
     const char *name;
     unsigned int addr;
     unsigned int size;
-    static uchar buf[MAX_IMAGE_SIZE];
+    static uint8_t buf[MAX_IMAGE_SIZE];
     unsigned int i;
 
     // If section is empty (although unexpected) return
@@ -247,7 +247,7 @@ void jtag2::downloadToTarget(const char* filename, bool program, bool verify)
     // box.
     struct stat ifstat;
     char *target = NULL;
-    char *default_target = "binary";
+    char *default_target = (char *)"binary";
     unsigned int page_size;
     bool done = 0;
     bfd *file;

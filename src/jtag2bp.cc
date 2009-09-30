@@ -90,7 +90,7 @@ void jtag2::deleteAllBreakpoints(void)
 
 bool jtag2::stopAt(unsigned int address)
 {
-	uchar one = 1;
+	uint8_t one = 1;
 	jtagWrite(BREAKPOINT_SPACE_ADDR_OFFSET + address / 2, 1, &one);
 }
 
@@ -390,7 +390,7 @@ bool jtag2::layoutBreakpoints(void)
 	// 'false', doesn't seem to work?
 	bool remaining_bps[MAX_BREAKPOINTS2 + 2] = {false, true, true, true, false, false};
 	int bp_i;
-	uchar bpnum;
+	uint8_t bpnum;
 	bool softwarebps = true;
 	bool hadroom = true;
 
@@ -533,7 +533,7 @@ void jtag2::updateBreakpoints(void)
 	bp_i = 0;
 	while (!bp[bp_i].last)
 		{
-			uchar cmd[6] = { CMND_CLR_BREAK };
+			uint8_t cmd[6] = { CMND_CLR_BREAK };
 
 			if (bp[bp_i].toremove)
 				{
@@ -548,7 +548,7 @@ void jtag2::updateBreakpoints(void)
 					else
 						u32_to_b4(cmd + 2, 0);
 
-					uchar *response;
+					uint8_t *response;
 					int responseSize;
 					if(!doJtagCommand(cmd, 6, response, responseSize))
 						check(false, "Failed to clear breakpoint");
@@ -567,7 +567,7 @@ void jtag2::updateBreakpoints(void)
 	bp_i = 0;
 	while (!bp[bp_i].last)
 		{
-			uchar cmd[8] = { CMND_SET_BREAK };
+			uint8_t cmd[8] = { CMND_SET_BREAK };
 
 			if (bp[bp_i].toadd && bp[bp_i].enabled)
 				{
@@ -619,7 +619,7 @@ void jtag2::updateBreakpoints(void)
 							break;
 						}
 
-					uchar *response;
+					uint8_t *response;
 					int responseSize;
 					check(doJtagCommand(cmd, 8, response, responseSize),
 								"Failed to set breakpoint");

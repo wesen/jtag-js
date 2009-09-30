@@ -27,6 +27,36 @@
 #include "avarice.h"
 #include "remote.h"
 
+unsigned long b4_to_u32(unsigned char *b) {
+	unsigned long l;
+	l = (unsigned)b[0];
+	l += (unsigned)b[1] << 8;
+	l += (unsigned)(unsigned)b[2] << 16;
+	l += (unsigned)b[3] << 24;
+
+	return l;
+};
+
+void u32_to_b4(unsigned char *b, unsigned long l) {
+	b[0] = l & 0xff;
+	b[1] = (l >> 8) & 0xff;
+	b[2] = (l >> 16) & 0xff;
+	b[3] = (l >> 24) & 0xff;
+};
+
+unsigned short b2_to_u16(unsigned char *b) {
+	unsigned short l;
+	l = (unsigned)b[0];
+	l += (unsigned)b[1] << 8;
+
+	return l;
+};
+
+void u16_to_b2(unsigned char *b, unsigned short l) {
+	b[0] = l & 0xff;
+	b[1] = (l >> 8) & 0xff;
+};
+
 static void check_1(bool printUnixError, const char *fmt, va_list args)
 {
     int en = errno;

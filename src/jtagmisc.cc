@@ -36,10 +36,10 @@
 #include "jtag.h"
 #include "jtag1.h"
 
-void jtag1::setJtagParameter(uchar item, uchar newValue)
+void jtag1::setJtagParameter(uint8_t item, uint8_t newValue)
 {
-    uchar *response = NULL;
-    uchar command[] = {'B', 0, 0, JTAG_EOM };
+    uint8_t *response = NULL;
+    uint8_t command[] = {'B', 0, 0, JTAG_EOM };
 
     command[1] = item;
     command[2] = newValue;
@@ -50,10 +50,10 @@ void jtag1::setJtagParameter(uchar item, uchar newValue)
     delete [] response;
 }
 
-uchar jtag1::getJtagParameter(uchar item)
+uint8_t jtag1::getJtagParameter(uint8_t item)
 {
-    uchar *response = NULL;
-    uchar command[] = {'q', 0, JTAG_EOM };
+    uint8_t *response = NULL;
+    uint8_t command[] = {'q', 0, JTAG_EOM };
     unsigned char result = 0;
 
     command[1] = item;

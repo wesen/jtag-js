@@ -41,9 +41,9 @@
 
 unsigned long jtag2::getProgramCounter(void)
 {
-    uchar *response;
+    uint8_t *response;
     int responseSize;
-    uchar command[] = { CMND_READ_PC };
+    uint8_t command[] = { CMND_READ_PC };
 
     check(doJtagCommand(command, sizeof(command), response, responseSize),
 					"cannot read program counter");
@@ -63,9 +63,9 @@ unsigned long jtag2::getProgramCounter(void)
 
 bool jtag2::setProgramCounter(unsigned long pc)
 {
-    uchar *response;
+    uint8_t *response;
     int responseSize;
-    uchar command[5] = { CMND_WRITE_PC };
+    uint8_t command[5] = { CMND_WRITE_PC };
 
     u32_to_b4(command + 1, pc / 2);
 
@@ -85,8 +85,8 @@ bool jtag2::resetProgram(bool possible_nSRST_ignored)
 	return interruptProgram()
 	    && setProgramCounter(0);
     } else {
-	uchar cmd[2] = { CMND_RESET, 0x01 };
-	uchar *resp;
+	uint8_t cmd[2] = { CMND_RESET, 0x01 };
+	uint8_t *resp;
 	int respSize;
 
 	bool rv = doJtagCommand(cmd, 2, resp, respSize);
@@ -101,8 +101,8 @@ bool jtag2::resetProgram(bool possible_nSRST_ignored)
 
 bool jtag2::interruptProgram(void)
 {
-    uchar cmd[2] = { CMND_FORCED_STOP, 0x01 };
-    uchar *resp;
+    uint8_t cmd[2] = { CMND_FORCED_STOP, 0x01 };
+    uint8_t *resp;
     int respSize;
 
     bool rv = doJtagCommand(cmd, 2, resp, respSize);
@@ -165,7 +165,7 @@ bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
 
 	if (FD_ISSET(jtagBox, &readfds))
 		{
-			uchar *evtbuf;
+			uint8_t *evtbuf;
 			int evtSize;
 			unsigned short seqno;
 			evtSize = recvFrame(evtbuf, seqno);
@@ -287,17 +287,17 @@ bool jtag2::eventLoop(void)
 
 bool jtag2::jtagSingleStep(bool useHLL)
 {
-    uchar cmd[3] = { CMND_SINGLE_STEP,
+    uint8_t cmd[3] = { CMND_SINGLE_STEP,
 		     useHLL? 0x02: 0x01,
 		     useHLL? 0x00: 0x01 };
-    uchar *resp;
+    uint8_t *resp;
     int respSize, i = 2;
     bool rv;
 
     do
     {
 	rv = doJtagCommand(cmd, 3, resp, respSize);
-	uchar stat = resp[0];
+	uint8_t stat = resp[0];
 	delete [] resp;
 
 	if (rv)
@@ -327,7 +327,7 @@ void jtag2::parseEvents(const char *evtlist)
 
     const struct
     {
-        uchar num;
+        uint8_t num;
         const char *name;
     } evttable[] =
         {
@@ -371,7 +371,7 @@ void jtag2::parseEvents(const char *evtlist)
         while (*cp2 != '\0' && *cp2 != ',')
             cp2++;
         size_t l = cp2 - cp1;
-        uchar evtval = 0;
+        uint8_t evtval = 0;
 
         // Now, cp1 points to the name to parse, of length l
         for (int i = 0; i < sizeof evttable / sizeof evttable[0]; i++)

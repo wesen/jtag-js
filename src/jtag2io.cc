@@ -50,7 +50,7 @@ jtag2::~jtag2(void)
 	  // avarice on failure; in case CMND_RESTORE_TARGET fails,
 	  // we'd like to try the sign-off command anyway.
 
-	  uchar *response, rstcmd = CMND_RESTORE_TARGET;
+	  uint8_t *response, rstcmd = CMND_RESTORE_TARGET;
 	  int responseSize;
 	  (void)doJtagCommand(&rstcmd, 1, response, responseSize);
 	  delete [] response;
@@ -64,7 +64,7 @@ jtag2::~jtag2(void)
  * Send one frame.  Adds the required preamble and CRC, and ensures
  * the frame could be written correctly.
  */
-void jtag2::sendFrame(uchar *command, int commandSize)
+void jtag2::sendFrame(uint8_t *command, int commandSize)
 {
     unsigned char *buf = new unsigned char[commandSize + 10];
     check(buf != NULL, "Out of memory");
@@ -240,7 +240,7 @@ int jtag2::recvFrame(unsigned char *&msg, unsigned short &seqno)
  * Try receiving frames, until we get the reply we are expecting.
  * Caller must delete[] the msg after processing it.
  */
-int jtag2::recv(uchar *&msg)
+int jtag2::recv(uint8_t *&msg)
 {
     unsigned short r_seqno;
     int rv;
@@ -290,8 +290,8 @@ int jtag2::recv(uchar *&msg)
     returned in &msgsize.
 **/
 
-bool jtag2::sendJtagCommand(uchar *command, int commandSize, int &tries,
-			    uchar *&msg, int &msgsize, bool verify)
+bool jtag2::sendJtagCommand(uint8_t *command, int commandSize, int &tries,
+			    uint8_t *&msg, int &msgsize, bool verify)
 {
     check(tries++ < MAX_JTAG_COMM_ATTEMPS,
 	      "JTAG ICE: Cannot synchronise");
@@ -331,8 +331,8 @@ bool jtag2::sendJtagCommand(uchar *command, int commandSize, int &tries,
 }
 
 
-bool jtag2::doJtagCommand(uchar *command, int  commandSize,
-			  uchar *&response, int  &responseSize,
+bool jtag2::doJtagCommand(uint8_t *command, int  commandSize,
+			  uint8_t *&response, int  &responseSize,
 			  bool retryOnTimeout)
 {
     int tryCount = 0;
@@ -358,10 +358,10 @@ bool jtag2::doJtagCommand(uchar *command, int  commandSize,
     }
 }
 
-void jtag2::doSimpleJtagCommand(uchar command)
+void jtag2::doSimpleJtagCommand(uint8_t command)
 {
     int tryCount = 0, dummy;
-    uchar *replydummy;
+    uint8_t *replydummy;
 
     // Send command until we get an OK response
     for (;;)
@@ -387,7 +387,7 @@ void jtag2::changeBitRate(int newBitRate)
     if (is_usb)
         return;
 
-    uchar jtagrate;
+    uint8_t jtagrate;
 
     switch (newBitRate) {
     case 9600:
@@ -413,8 +413,8 @@ void jtag2::changeBitRate(int newBitRate)
 /** Set the JTAG ICE device descriptor data for specified device type **/
 void jtag2::setDeviceDescriptor(jtag_device_def_type *dev)
 {
-    uchar *response;
-    uchar *command = (uchar *)(&dev->dev_desc2);
+    uint8_t *response;
+    uint8_t *command = (uint8_t *)(&dev->dev_desc2);
     int respSize;
 
     check(doJtagCommand(command, devdescrlen, response, respSize),
@@ -431,7 +431,7 @@ bool jtag2::synchroniseAt(int bitrate)
     changeLocalBitRate(bitrate);
 
     int tries = 0;
-    uchar *signonmsg, signoncmd = CMND_GET_SIGN_ON;
+    uint8_t *signonmsg, signoncmd = CMND_GET_SIGN_ON;
     int msgsize;
 
     while (tries < MAX_JTAG_SYNC_ATTEMPS)
@@ -496,7 +496,7 @@ void jtag2::startJtagLink(void)
 
     for (unsigned int i = 0; i < sizeof bitrates / sizeof *bitrates; i++)
 	if (synchroniseAt(bitrates[i])) {
-	    uchar val;
+	    uint8_t val;
 
 	    if (apply_nSRST) {
 		val = 0x01;
@@ -524,7 +524,7 @@ void jtag2::startJtagLink(void)
 void jtag2::deviceAutoConfig(void)
 {
     unsigned int device_id;
-    uchar *resp;
+    uint8_t *resp;
     int respSize;
     int i;
     jtag_device_def_type *pDevice = deviceDefinitions;
@@ -663,7 +663,7 @@ void jtag2::initJtagOnChipDebugging(unsigned long bitrate)
     // debugWire cannot read or manipulate fuse or lock bits
     if (!useDebugWire)
     {
-      uchar br;
+      uint8_t br;
       if (bitrate >= 6400000)
 	br = 0;
       else if (bitrate >= 2800000)
@@ -681,7 +681,7 @@ void jtag2::initJtagOnChipDebugging(unsigned long bitrate)
       enableProgramming();
 
       // Ensure that all lock bits are "unlocked" ie all 1's
-      uchar *lockBits = 0;
+      uint8_t *lockBits = 0;
       lockBits = jtagRead(LOCK_SPACE_ADDR_OFFSET + 0, 1);
 
       if (*lockBits != LOCK_BITS_ALL_UNLOCKED)
@@ -700,7 +700,7 @@ void jtag2::initJtagOnChipDebugging(unsigned long bitrate)
       }
 
       // Ensure on-chip debug enable fuse is enabled ie '0'
-      uchar *fuseBits = 0;
+      uint8_t *fuseBits = 0;
       console->statusOut("\nEnabling on-chip debugging:\n");
       fuseBits = jtagRead(FUSE_SPACE_ADDR_OFFSET + 0, 3);
 
@@ -723,7 +723,7 @@ void jtag2::initJtagOnChipDebugging(unsigned long bitrate)
 
 
     resetProgram();
-    uchar timers = 0;		// stopped
+    uint8_t timers = 0;		// stopped
     if (!is_xmega)
         setJtagParameter(PAR_TIMERS_RUNNING, &timers, 1);
     resetProgram();

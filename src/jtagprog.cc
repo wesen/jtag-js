@@ -87,8 +87,8 @@ void jtag1::eraseProgramMemory(void)
 
 void jtag1::eraseProgramPage(unsigned long address)
 {
-    uchar *response = NULL;
-    uchar command[] = { 0xa1, 0, 0, 0, JTAG_EOM };
+    uint8_t *response = NULL;
+    uint8_t command[] = { 0xa1, 0, 0, 0, JTAG_EOM };
 
     command[1] = address >> 8;
     command[2] = address;
@@ -188,7 +188,7 @@ static void jtag_create_image(bfd *file, asection *section,
     const char *name;
     unsigned int addr;
     unsigned int size;
-    static uchar buf[MAX_IMAGE_SIZE];
+    static uint8_t buf[MAX_IMAGE_SIZE];
     unsigned int i;
 
     // If section is empty (although unexpected) return

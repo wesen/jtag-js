@@ -103,7 +103,7 @@ struct breakpoint2
                     // when is enabled in ACTUAL device
     bool toremove;  // Delete this guy in ICE
     bool toadd;     // Add this guy in ICE
-    uchar bpnum;    // ICE's breakpoint number (0x00 for software)
+    uint8_t bpnum;    // ICE's breakpoint number (0x00 for software)
 };
 
 const struct breakpoint2 default_bp =
@@ -190,8 +190,8 @@ class jtag2: public jtag
     virtual bool jtagSingleStep(bool useHLL = false);
     virtual bool jtagContinue(void);
 
-    virtual uchar *jtagRead(unsigned long addr, unsigned int numBytes);
-    virtual bool jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[]);
+    virtual uint8_t *jtagRead(unsigned long addr, unsigned int numBytes);
+    virtual bool jtagWrite(unsigned long addr, unsigned int numBytes, uint8_t buffer[]);
 
   private:
     virtual void changeBitRate(int newBitRate);
@@ -201,43 +201,13 @@ class jtag2: public jtag
     virtual void deviceAutoConfig(void);
     virtual void configDaisyChain(void);
 
-    void sendFrame(uchar *command, int commandSize);
+    void sendFrame(uint8_t *command, int commandSize);
     int recvFrame(unsigned char *&msg, unsigned short &seqno);
     int recv(unsigned char *&msg);
 
-    unsigned long b4_to_u32(unsigned char *b) {
-      unsigned long l;
-      l = (unsigned)b[0];
-      l += (unsigned)b[1] << 8;
-      l += (unsigned)(unsigned)b[2] << 16;
-      l += (unsigned)b[3] << 24;
-
-      return l;
-    };
-
-    void u32_to_b4(unsigned char *b, unsigned long l) {
-      b[0] = l & 0xff;
-      b[1] = (l >> 8) & 0xff;
-      b[2] = (l >> 16) & 0xff;
-      b[3] = (l >> 24) & 0xff;
-    };
-
-    unsigned short b2_to_u16(unsigned char *b) {
-      unsigned short l;
-      l = (unsigned)b[0];
-      l += (unsigned)b[1] << 8;
-
-      return l;
-    };
-
-    void u16_to_b2(unsigned char *b, unsigned short l) {
-      b[0] = l & 0xff;
-      b[1] = (l >> 8) & 0xff;
-    };
-
  public:
-    bool sendJtagCommand(uchar *command, int commandSize, int &tries,
-			 uchar *&msg, int &msgsize, bool verify = true);
+    bool sendJtagCommand(uint8_t *command, int commandSize, int &tries,
+			 uint8_t *&msg, int &msgsize, bool verify = true);
 
     /** Send a command to the jtag, with retries, and return the
 	'responseSize' byte &response, response size in
@@ -249,8 +219,8 @@ class jtag2: public jtag
 
 	Caller must delete [] the response.
     **/
-    bool doJtagCommand(uchar *command, int  commandSize,
-		       uchar *&response, int &responseSize,
+    bool doJtagCommand(uint8_t *command, int  commandSize,
+		       uint8_t *&response, int &responseSize,
 		       bool retryOnTimeout = true);
 
     /** Simplified form of doJtagCommand:
@@ -258,20 +228,20 @@ class jtag2: public jtag
 	response that consists only of the status byte which must be
 	RSP_OK.
     **/
-    void doSimpleJtagCommand(uchar cmd);
+    void doSimpleJtagCommand(uint8_t cmd);
 
     // Miscellaneous
     // -------------
 
     /** Set JTAG ICE parameter 'item' to 'newValue' **/
-    void setJtagParameter(uchar item, uchar *newValue, int valSize);
+    void setJtagParameter(uint8_t item, uint8_t *newValue, int valSize);
 
     /** Return value of JTAG ICE parameter 'item'; caller must delete
         [] resp
     **/
-    void getJtagParameter(uchar item, uchar *&resp, int &respSize);
+    void getJtagParameter(uint8_t item, uint8_t *&resp, int &respSize);
 
-    uchar memorySpace(unsigned long &addr);
+    uint8_t memorySpace(unsigned long &addr);
 
     /** debugWire version of the breakpoint updater.
      **/

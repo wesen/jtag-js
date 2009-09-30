@@ -40,8 +40,8 @@
 
 unsigned long jtag1::getProgramCounter(void)
 {
-    uchar *response = NULL;
-    uchar command[] = {'2', JTAG_EOM };
+    uint8_t *response = NULL;
+    uint8_t command[] = {'2', JTAG_EOM };
     unsigned long result = 0;
 
     response = doJtagCommand(command, sizeof(command), 4);
@@ -65,8 +65,8 @@ unsigned long jtag1::getProgramCounter(void)
 
 bool jtag1::setProgramCounter(unsigned long pc)
 {
-    uchar *response = NULL;
-    uchar command[] = {'3', 0, 0, 0, JTAG_EOM };
+    uint8_t *response = NULL;
+    uint8_t command[] = {'3', 0, 0, 0, JTAG_EOM };
     bool result;
 
     // See decoding in getProgramCounter
@@ -165,14 +165,14 @@ bool jtag1::pollDevice(bool *gdbInterrupt, bool *breakpoint) {
 	// power "event" -- whatever that is (ignored), or a byte of
 	// info sent by the program (currently ignored, could be used
 	// for something...)
-	uchar response;
+	uint8_t response;
 
         // This read shouldn't need to be a timeout_read(), but some cygwin
         // systems don't seem to honor the O_NONBLOCK flag on file
         // descriptors.
 	while (timeout_read(&response, 1, 1) == 1)
 	{
-	    uchar buf[2];
+	    uint8_t buf[2];
 	    int count;
 
 	    debugOut("JTAG box sent %c", response);

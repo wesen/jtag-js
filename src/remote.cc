@@ -122,7 +122,7 @@ static void waitForGdbInput(void)
     exit cleanly if EOF detected on gdbFileDescriptor. **/
 int getDebugChar(void)
 {
-    uchar c = 0;
+    uint8_t c = 0;
     int result;
 
     do
@@ -147,7 +147,7 @@ int getDebugChar(void)
 
 int checkForDebugChar(void)
 {
-    uchar c = 0;
+    uint8_t c = 0;
     int result;
 
     result = read(gdbFileDescriptor, &c, 1);
@@ -169,7 +169,7 @@ int checkForDebugChar(void)
 
 static const unsigned char hexchars[] = "0123456789abcdef";
 
-static char *byteToHex(uchar x, char *buf)
+static char *byteToHex(uint8_t x, char *buf)
 {
     *buf++ = hexchars[x >> 4];
     *buf++ = hexchars[x & 0xf];
@@ -225,7 +225,7 @@ static int hexToInt(char **ptr, int *intValue)
 /** Convert the memory pointed to by mem into hex, placing result in buf.
     Return a pointer to the last char put in buf (null).
 **/
-static char *mem2hex(uchar *mem, char *buf, int count)
+static char *mem2hex(uint8_t *mem, char *buf, int count)
 {
     for (int i = 0; i < count; i++)
 	buf = byteToHex(*mem++, buf);
@@ -237,7 +237,7 @@ static char *mem2hex(uchar *mem, char *buf, int count)
 /** Convert the hex array pointed to by buf into binary to be placed in mem.
     Return a pointer to the character AFTER the last byte written.
 **/
-static uchar *hex2mem(char *buf, uchar *mem, int count)
+static uint8_t *hex2mem(char *buf, uint8_t *mem, int count)
 {
     int i;
     unsigned char ch;
@@ -257,7 +257,7 @@ static uchar *hex2mem(char *buf, uchar *mem, int count)
     'count' is the total number of bytes to write into
     memory.
 **/
-static uchar *bin2mem(char *buf, uchar *mem, int count)
+static uint8_t *bin2mem(char *buf, uint8_t *mem, int count)
 {
     int i;
 
@@ -340,7 +340,7 @@ void gdbOut(const char *fmt, ...)
 
 static void reportStatusExtended(int sigval)
 {
-    uchar *jtagBuffer;
+    uint8_t *jtagBuffer;
     unsigned long pc = theJtagICE->getProgramCounter();
 
     // Read in SPL SPH SREG
@@ -651,10 +651,10 @@ void talkToGdb(void)
 
     case 'M':
     {
-	uchar *jtagBuffer;
+	uint8_t *jtagBuffer;
         int lead = 0;
         static bool last_orphan_pending = false;
-        static uchar last_orphan = 0xff;
+        static uint8_t last_orphan = 0xff;
 
 	// MAA..AA,LLLL: Write LLLL bytes at address AA.AA return OK
 	// TRY TO READ '%x,%x:'.  IF SUCCEED, SET PTR = 0
@@ -688,7 +688,7 @@ void talkToGdb(void)
 
             last_orphan_pending = false;
 
-	    jtagBuffer = new uchar[length];
+	    jtagBuffer = new uint8_t[length];
 	    hex2mem(ptr, jtagBuffer+lead, length);
             if (lead)
                 jtagBuffer[0] = last_orphan;
@@ -712,7 +712,7 @@ void talkToGdb(void)
     }
     case 'm':	// mAA..AA,LLLL  Read LLLL bytes at address AA..AA
     {
-	uchar *jtagBuffer;
+	uint8_t *jtagBuffer;
 
 	error(1); // default is error
 	if((hexToInt(&ptr, &addr)) &&
@@ -736,8 +736,8 @@ void talkToGdb(void)
 
     case 'g':   // return the value of the CPU registers
     {
-	uchar *jtagBuffer;
-        uchar regBuffer[40];
+	uint8_t *jtagBuffer;
+        uint8_t regBuffer[40];
 
         memset(regBuffer, 0, sizeof(regBuffer));
 
@@ -808,7 +808,7 @@ void talkToGdb(void)
 
     case 'q':   // general query
     {
-        uchar* jtagBuffer;
+        uint8_t* jtagBuffer;
 
         length = strlen("Ravr.io_reg");
         if ( strncmp(ptr, "Ravr.io_reg", length) == 0 )
@@ -930,7 +930,7 @@ void talkToGdb(void)
 	error(1); // error by default
 	if (hexToInt(&ptr, &regno) && *ptr++ == '=')
         {
-            uchar reg[4];
+            uint8_t reg[4];
 
             if (regno >= 0 && regno < NUMREGS)
             {

@@ -34,7 +34,7 @@
 #include "jtag.h"
 #include "jtag2.h"
 
-void jtag2::setJtagParameter(uchar item, uchar *newValue, int valSize)
+void jtag2::setJtagParameter(uint8_t item, uint8_t *newValue, int valSize)
 {
     int respsize;
     /*
@@ -60,7 +60,7 @@ void jtag2::setJtagParameter(uchar item, uchar *newValue, int valSize)
  * that the response still includes the response code at index 0 (to be
  * ignored).
  */
-void jtag2::getJtagParameter(uchar item, uchar *&resp, int &respSize)
+void jtag2::getJtagParameter(uint8_t item, uint8_t *&resp, int &respSize)
 {
     /*
      * As the maximal parameter length is 4 bytes, we use a fixed-length

@@ -42,7 +42,7 @@
 /** Return the memory space code for the memory space indicated by the
     high-order bits of 'addr'. Also clear these high order bits in 'addr'
 **/
-uchar jtag2::memorySpace(unsigned long &addr)
+uint8_t jtag2::memorySpace(unsigned long &addr)
 {
     int mask;
 
@@ -83,20 +83,20 @@ uchar jtag2::memorySpace(unsigned long &addr)
     }
 }
 
-uchar *jtag2::jtagRead(unsigned long addr, unsigned int numBytes)
+uint8_t *jtag2::jtagRead(unsigned long addr, unsigned int numBytes)
 {
-    uchar *response;
+    uint8_t *response;
     int responseSize;
 
     if (numBytes == 0)
     {
-	response = new uchar[1];
+	response = new uint8_t[1];
 	response[0] = '\0';
 	return response;
     }
 
     console->debugOut("jtagRead ");
-    uchar whichSpace = memorySpace(addr);
+    uint8_t whichSpace = memorySpace(addr);
     bool needProgmode = whichSpace >= MTYPE_FLASH_PAGE;
     unsigned int pageSize = 0;
     unsigned int offset = 0;
@@ -131,12 +131,12 @@ uchar *jtag2::jtagRead(unsigned long addr, unsigned int numBytes)
 	break;
     }
 
-    uchar command[10] = { CMND_READ_MEMORY };
+    uint8_t command[10] = { CMND_READ_MEMORY };
     command[1] = whichSpace;
 
     if (pageSize > 0) {
 	u32_to_b4(command + 2, pageSize);
-	response = new uchar[numBytes];
+	response = new uint8_t[numBytes];
 
 	unsigned int mask = pageSize - 1;
 	unsigned int pageAddr = addr & ~mask;
@@ -151,7 +151,7 @@ uchar *jtag2::jtagRead(unsigned long addr, unsigned int numBytes)
 
 	while (numBytes > 0)
 	{
-	    uchar *resp;
+	    uint8_t *resp;
 
 	    if (pageAddr == *cacheBaseAddr)
 	    {
@@ -198,13 +198,13 @@ uchar *jtag2::jtagRead(unsigned long addr, unsigned int numBytes)
     return response;
 }
 
-bool jtag2::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
+bool jtag2::jtagWrite(unsigned long addr, unsigned int numBytes, uint8_t buffer[])
 {
     if (numBytes == 0)
 	return true;
 
     console->debugOut("jtagWrite ");
-    uchar whichSpace = memorySpace(addr);
+    uint8_t whichSpace = memorySpace(addr);
 
     // Hack to detect the start of a GDB "load" command.  Iff this
     // address is tied to flash ROM, and it is address 0, and the size
@@ -243,7 +243,7 @@ bool jtag2::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
 	check(numBytes == pageSize,
 	      "jtagWrite(): numByte does not match page size");
     }
-    uchar *command = new uchar [10 + numBytes];
+    uint8_t *command = new uint8_t [10 + numBytes];
     command[0] = CMND_WRITE_MEMORY;
     command[1] = whichSpace;
     if (pageSize) {
@@ -255,7 +255,7 @@ bool jtag2::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
     }
     memcpy(command + 10, buffer, numBytes);
 
-    uchar *response;
+    uint8_t *response;
     int responseSize;
 
     check(doJtagCommand(command, 10 + numBytes, response, responseSize),

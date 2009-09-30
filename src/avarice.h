@@ -22,15 +22,12 @@
 #define INCLUDE_AVARICE_H
 
 #include <stdarg.h>
+#include <inttypes.h>
 
 #include "autoconf.h"
 
 #include "console.hh"
-
-typedef unsigned char uchar;
-
-/** added quietMode mainly to silence statusOut when using javascript console */
-extern bool quietMode;
+#include "utils.hh"
 
 /** true if interrupts should be stepped over when stepping */
 extern bool ignoreInterrupts;

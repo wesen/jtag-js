@@ -69,12 +69,12 @@ struct breakpoint
 class jtag1: public jtag
 {
     /** Decode 3-byte big-endian address **/
-    unsigned long decodeAddress(uchar *buf) {
+    unsigned long decodeAddress(uint8_t *buf) {
 	return buf[0] << 16 | buf[1] << 8 | buf[2];
     };
 
     /** Encode 3-byte big-endian address **/
-    void encodeAddress(uchar *buffer, unsigned long x) {
+    void encodeAddress(uint8_t *buffer, unsigned long x) {
 	buffer[0] = x >> 16;
 	buffer[1] = x >> 8;
 	buffer[2] = x;
@@ -115,8 +115,8 @@ class jtag1: public jtag
     virtual bool jtagSingleStep(bool useHLL = false);
     virtual bool jtagContinue(void);
 
-    virtual uchar *jtagRead(unsigned long addr, unsigned int numBytes);
-    virtual bool jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[]);
+    virtual uint8_t *jtagRead(unsigned long addr, unsigned int numBytes);
+    virtual bool jtagWrite(unsigned long addr, unsigned int numBytes, uint8_t buffer[]);
 
   private:
     virtual void changeBitRate(int newBitRate);
@@ -126,8 +126,8 @@ class jtag1: public jtag
     virtual void deviceAutoConfig(void);
     virtual void configDaisyChain(void);
 
-    uchar *getJtagResponse(int responseSize);
-    SendResult sendJtagCommand(uchar *command, int commandSize, int *tries);
+    uint8_t *getJtagResponse(int responseSize);
+    SendResult sendJtagCommand(uint8_t *command, int commandSize, int *tries);
     bool checkForEmulator(void);
 
     /** Send a command to the jtag, with retries, and return the 'responseSize'
@@ -136,7 +136,7 @@ class jtag1: public jtag
 	Returns a dynamically allocated buffer containing the reponse (caller
 	must free)
     **/
-    uchar *doJtagCommand(uchar *command, int  commandSize, int responseSize);
+    uint8_t *doJtagCommand(uint8_t *command, int  commandSize, int responseSize);
 
     /** Simplified form of doJtagCommand:
 	Send 1-byte command 'cmd' to JTAG ICE, with retries, expecting a
@@ -145,16 +145,16 @@ class jtag1: public jtag
 	Return true if responseSize is 0 or if last response byte is
 	JTAG_R_OK
     **/
-    bool doSimpleJtagCommand(uchar cmd, int responseSize);
+    bool doSimpleJtagCommand(uint8_t cmd, int responseSize);
 
     // Miscellaneous
     // -------------
 
     /** Set JTAG ICE parameter 'item' to 'newValue' **/
-    void setJtagParameter(uchar item, uchar newValue);
+    void setJtagParameter(uint8_t item, uint8_t newValue);
 
     /** Return value of JTAG ICE parameter 'item' **/
-    uchar getJtagParameter(uchar item);
+    uint8_t getJtagParameter(uint8_t item);
 
 		virtual bool pollDevice(bool *gdbInterrupt, bool *breakpoint);
 		virtual void startPolling();

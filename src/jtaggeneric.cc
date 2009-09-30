@@ -109,7 +109,7 @@ static codeToString_t jtagRsp2String[] = {
   
 };
 
-const char *jtag::codeToString(uchar code, codeToString_t *arr,
+const char *jtag::codeToString(uint8_t code, codeToString_t *arr,
 			       int max, const char *defaultName) {
   for (int i = 0; i < max; i++) {
     if (arr[i].code == code) {
@@ -120,11 +120,11 @@ const char *jtag::codeToString(uchar code, codeToString_t *arr,
   return defaultName;
 }
 
-const char *jtag::jtagCmdToString(uchar command) {
+const char *jtag::jtagCmdToString(uint8_t command) {
   return codeToString(command, jtagCmd2String, countof(jtagCmd2String), "CMND_UNKNOWN");
 }
 
-const char *jtag::jtagRspToString(uchar rsp) {
+const char *jtag::jtagRspToString(uint8_t rsp) {
   return codeToString(rsp, jtagRsp2String, countof(jtagRsp2String), "RSP_UNKNOWN");
 }
   
@@ -377,9 +377,9 @@ void jtag::jtag_flash_image(BFDimage *image, BFDmemoryType memtype,
                              bool program, bool verify)
 {
     unsigned int page_size = get_page_size(memtype);
-    static uchar buf[MAX_IMAGE_SIZE];
+    static uint8_t buf[MAX_IMAGE_SIZE];
     unsigned int i;
-    uchar *response = NULL;
+    uint8_t *response = NULL;
     bool emptyPage = true;
     unsigned int addr;
 
@@ -480,8 +480,8 @@ void jtag::jtag_flash_image(BFDimage *image, BFDmemoryType memtype,
 void jtag::jtagWriteFuses(char *fuses)
 {
     int temp[3];
-    uchar fuseBits[3];
-    uchar *readfuseBits;
+    uint8_t fuseBits[3];
+    uint8_t *readfuseBits;
     unsigned int c;
 
     check(fuses,
@@ -492,9 +492,9 @@ void jtag::jtagWriteFuses(char *fuses)
     check(c == 3,
           "Error: Fuses specified are not in hexidecimal");
 
-    fuseBits[0] = (uchar)temp[0];
-    fuseBits[1] = (uchar)temp[1];
-    fuseBits[2] = (uchar)temp[2];
+    fuseBits[0] = (uint8_t)temp[0];
+    fuseBits[1] = (uint8_t)temp[1];
+    fuseBits[2] = (uint8_t)temp[2];
 
     console->statusOut("\nWriting Fuse Bytes:\n");
     jtagDisplayFuses(fuseBits);
@@ -517,7 +517,7 @@ void jtag::jtagWriteFuses(char *fuses)
 
 void jtag::jtagReadFuses(void)
 {
-    uchar *fuseBits = 0;
+    uint8_t *fuseBits = 0;
 
     enableProgramming();
     console->statusOut("\nReading Fuse Bytes:\n");
@@ -532,7 +532,7 @@ void jtag::jtagReadFuses(void)
 }
 
 
-void jtag::jtagDisplayFuses(uchar *fuseBits)
+void jtag::jtagDisplayFuses(uint8_t *fuseBits)
 {
     console->statusOut("  Extended Fuse byte -> 0x%02x\n", fuseBits[2]);
     console->statusOut("      High Fuse byte -> 0x%02x\n", fuseBits[1]);
@@ -543,8 +543,8 @@ void jtag::jtagDisplayFuses(uchar *fuseBits)
 void jtag::jtagWriteLockBits(char *lock)
 {
     int temp[1];
-    uchar lockBits[1];
-    uchar *readlockBits;
+    uint8_t lockBits[1];
+    uint8_t *readlockBits;
     unsigned int c;
 
     check(lock,
@@ -558,7 +558,7 @@ void jtag::jtagWriteLockBits(char *lock)
     check(c == 1,
           "Error: Fuses specified are not in hexidecimal");
 
-    lockBits[0] = (uchar)temp[0];
+    lockBits[0] = (uint8_t)temp[0];
 
     console->statusOut("\nWriting Lock Bits -> 0x%02x\n", lockBits[0]);
 
@@ -580,7 +580,7 @@ void jtag::jtagWriteLockBits(char *lock)
 
 void jtag::jtagReadLockBits(void)
 {
-    uchar *lockBits = 0;
+    uint8_t *lockBits = 0;
 
     enableProgramming();
     console->statusOut("\nReading Lock Bits:\n");
@@ -595,7 +595,7 @@ void jtag::jtagReadLockBits(void)
 }
 
 
-void jtag::jtagDisplayLockBits(uchar *lockBits)
+void jtag::jtagDisplayLockBits(uint8_t *lockBits)
 {
     console->statusOut("Lock bits -> 0x%02x\n\n", lockBits[0]);
 

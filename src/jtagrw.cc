@@ -42,7 +42,7 @@
 /** Return the memory space code for the memory space indicated by the
     high-order bits of '*addr'. Also clear these high order bits in '*addr'
 **/
-static uchar memorySpace(unsigned long *addr)
+static uint8_t memorySpace(unsigned long *addr)
 {
     int mask;
 
@@ -68,27 +68,27 @@ static uchar memorySpace(unsigned long *addr)
     }
 }
 
-static void swapBytes(uchar *buffer, int count)
+static void swapBytes(uint8_t *buffer, int count)
 {
     assert(!(count & 1));
     for (unsigned int i = 0; i < count; i += 2)
     {
-	uchar temp = buffer[i];
+	uint8_t temp = buffer[i];
 	buffer[i] = buffer[i + 1];
 	buffer[i + 1] = temp;
     }
 }
 
 
-uchar *jtag1::jtagRead(unsigned long addr, unsigned int numBytes)
+uint8_t *jtag1::jtagRead(unsigned long addr, unsigned int numBytes)
 {
-    uchar *response;
+    uint8_t *response;
     int whichSpace = 0;
-    uchar command[] = { 'R', 0, 0, 0, 0, 0, JTAG_EOM }; 
+    uint8_t command[] = { 'R', 0, 0, 0, 0, 0, JTAG_EOM }; 
 
     if (numBytes == 0)
     {
-	response = new uchar[1];
+	response = new uint8_t[1];
 	response[0] = '\0';
 	return response;
     }
@@ -158,12 +158,12 @@ uchar *jtag1::jtagRead(unsigned long addr, unsigned int numBytes)
     return NULL;
 }
 
-bool jtag1::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
+bool jtag1::jtagWrite(unsigned long addr, unsigned int numBytes, uint8_t buffer[])
 {
-    uchar *response;
+    uint8_t *response;
     int whichSpace = 0;
     unsigned int numLocations;
-    uchar command[] = { 'W', 0, 0, 0, 0, 0, JTAG_EOM }; 
+    uint8_t command[] = { 'W', 0, 0, 0, 0, 0, JTAG_EOM }; 
 
     if (numBytes == 0)
 	return true;
@@ -240,7 +240,7 @@ bool jtag1::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
     // to program space are for code download, it is simpler at this
     // stage to simply pass the data straight through. This may need to
     // change in the future.
-    uchar *txBuffer = new uchar[numBytes + 3]; // allow for header and trailer
+    uint8_t *txBuffer = new uint8_t[numBytes + 3]; // allow for header and trailer
     txBuffer[0] = 'h';
 
     memcpy(&txBuffer[1], buffer, numBytes);
