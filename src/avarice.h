@@ -25,10 +25,9 @@
 
 #include "autoconf.h"
 
-typedef unsigned char uchar;
+#include "console.hh"
 
-/** true iff --debug option specified **/
-extern bool debugMode;
+typedef unsigned char uchar;
 
 /** added quietMode mainly to silence statusOut when using javascript console */
 extern bool quietMode;
@@ -36,15 +35,7 @@ extern bool quietMode;
 /** true if interrupts should be stepped over when stepping */
 extern bool ignoreInterrupts;
 
-/** printf 'fmt, ...' if debugMode **/
-void vdebugOut(const char *fmt, va_list args);
-void debugOut(const char *fmt, ...);
-
-/** printf 'fmt, ...' to status file descriptor (currently stdout) **/
-void vstatusOut(const char *fmt, va_list args);
-void statusOut(const char *fmt, ...);
-void statusFlush();
-
+// XXX throw exception
 /** Abort program with error message 'fmt, ...' if !ok.
 
     Error message is sent via statusOut and gdbOut **/

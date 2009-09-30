@@ -309,6 +309,9 @@ int main(int argc, char **argv)
 	char *device_name = 0;
 	const char *eventlist = "none,run,target_power_on,target_sleep,target_wakeup";
 
+	Console mainConsole;
+	console = &mainConsole;
+
 	unsigned long jtagBitrate = 0;
 	const char *hostName = "0.0.0.0";	/* INADDR_ANY */
 	int  hostPortNumber;
@@ -337,7 +340,7 @@ int main(int argc, char **argv)
 	unsigned int bits_before = 0;
 	unsigned int bits_after = 0;
 
-	statusOut("AVaRICE version %s, %s %s\n\n",
+	console->statusOut("AVaRICE version %s, %s %s\n\n",
 						PACKAGE_VERSION, __DATE__, __TIME__);
 
 	device_name = 0;
@@ -389,7 +392,7 @@ int main(int argc, char **argv)
 				detach = true;
 				break;
 			case 'd':
-				debugMode = true;
+				Console::debugMode = true;
 				break;
 			case 'e':
 				erase = true;
@@ -577,14 +580,14 @@ int main(int argc, char **argv)
     {
 			if (protocol == MKII_DW)
 				{
-					statusOut("WARNING: Chip erase not possible in debugWire mode; ignored\n");
+					console->statusOut("WARNING: Chip erase not possible in debugWire mode; ignored\n");
 				}
 			else
 				{
 					theJtagICE->enableProgramming();
-					statusOut("Erasing program memory.\n");
+					console->statusOut("Erasing program memory.\n");
 					theJtagICE->eraseProgramMemory();
-					statusOut("Erase complete.\n");
+					console->statusOut("Erase complete.\n");
 					theJtagICE->disableProgramming();
 				}
     }
@@ -621,7 +624,7 @@ int main(int argc, char **argv)
 			}
 
 			if ((erase == false) && (program == true)) {
-				statusOut("WARNING: The default behaviour has changed.\n"
+				console->statusOut("WARNING: The default behaviour has changed.\n"
 									"Programming no longer erases by default. If you want to"
 									" erase and program\nin a single step, use the --erase "
 									"in addition to --program. The reason for\nthis change "
@@ -650,7 +653,7 @@ int main(int argc, char **argv)
     {
 			initSocketAddress(&name, hostName, hostPortNumber);
 			sock = makeSocket(&name, hostPortNumber);
-			statusOut("Waiting for connection on port %hu.\n", hostPortNumber);
+			console->statusOut("Waiting for connection on port %hu.\n", hostPortNumber);
 			gdbCheck(listen(sock, 1));
 
 			if (detach)
@@ -668,7 +671,7 @@ int main(int argc, char **argv)
 			socklen_t size = (socklen_t)sizeof(clientname);
 			int gfd = accept(sock, (struct sockaddr *)&clientname, &size);
 			gdbCheck(gfd);
-			statusOut("Connection opened by host %s, port %hu.\n",
+			console->statusOut("Connection opened by host %s, port %hu.\n",
 								inet_ntoa(clientname.sin_addr), ntohs(clientname.sin_port));
 
 			setGdbFile(gfd);

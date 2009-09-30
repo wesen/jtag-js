@@ -52,12 +52,12 @@ SendResult jtag1::sendJtagCommand(uchar *command, int commandSize, int *tries)
     check((*tries)++ < MAX_JTAG_COMM_ATTEMPS,
 	      "JTAG ICE: Cannot synchronise");
 
-    debugOut("\ncommand[%c, %d]: ", command[0], *tries);
+    console->debugOut("\ncommand[%c, %d]: ", command[0], *tries);
 
     for (int i = 0; i < commandSize; i++)
-	debugOut("%.2X ", command[i]);
+	console->debugOut("%.2X ", command[i]);
 
-    debugOut("\n");
+    console->debugOut("\n");
 
     // before writing, clean up any "unfinished business".
     jtagCheck(tcflush(jtagBox, TCIFLUSH));
@@ -82,7 +82,7 @@ SendResult jtag1::sendJtagCommand(uchar *command, int commandSize, int *tries)
 	// timed out
 	if (count == 0)
 	{
-	    debugOut("Timed out.\n");
+	    console->debugOut("Timed out.\n");
 	    return send_failed;
 	}
 
@@ -93,20 +93,20 @@ SendResult jtag1::sendJtagCommand(uchar *command, int commandSize, int *tries)
 	    unsigned char infobuf[2];
 
 	    /* An info ("IDR dirty") response. Ignore it. */
-	    debugOut("Info response: ");
+	    console->debugOut("Info response: ");
 	    count = timeout_read(infobuf, 2, JTAG_RESPONSE_TIMEOUT);
 	    for (int i = 0; i < count; i++)
 	    {
-		debugOut("%.2X ", infobuf[i]);
+		console->debugOut("%.2X ", infobuf[i]);
 	    }
-	    debugOut("\n");
+	    console->debugOut("\n");
 	    if (count != 2 || infobuf[1] != JTAG_R_OK)
 		return send_failed;
 	    else
 		return (SendResult)(mcu_data + infobuf[0]);
 	    break;
 	default:
-	    debugOut("Out of sync, reponse was `%02x'\n", ok);
+	    console->debugOut("Out of sync, reponse was `%02x'\n", ok);
 	    return send_failed;
 	}
       }
@@ -133,16 +133,16 @@ uchar *jtag1::getJtagResponse(int responseSize)
                                 JTAG_RESPONSE_TIMEOUT);
     jtagCheck(numCharsRead);
 
-    debugOut("response: ");
+    console->debugOut("response: ");
     for (int i = 0; i < numCharsRead; i++)
     {
-	debugOut("%.2X ", response[i]);
+	console->debugOut("%.2X ", response[i]);
     }
-    debugOut("\n");
+    console->debugOut("\n");
 
     if (numCharsRead < responseSize) // timeout problem
     {
-	debugOut("Timed Out (partial response)\n");
+	console->debugOut("Timed Out (partial response)\n");
 	delete [] response;
 	return NULL;
     }
@@ -265,7 +265,7 @@ bool jtag1::checkForEmulator(void)
 /** Attempt to synchronise with JTAG at specified bitrate **/
 bool jtag1::synchroniseAt(int bitrate)
 {
-    debugOut("Attempting synchronisation at bitrate %d\n", bitrate);
+    console->debugOut("Attempting synchronisation at bitrate %d\n", bitrate);
 
     changeLocalBitRate(bitrate);
 
@@ -312,7 +312,7 @@ void jtag1::deviceAutoConfig(void)
     jtag_device_def_type *pDevice = deviceDefinitions;
 
     // Auto config
-    debugOut("Automatic device detection: ");
+    console->debugOut("Automatic device detection: ");
 
     /* Set daisy chain information */
     configDaisyChain();
@@ -326,14 +326,14 @@ void jtag1::deviceAutoConfig(void)
       (getJtagParameter(JTAG_P_JTAGID_BYTE3) << 24);
 
    
-    debugOut("JTAG id = 0x%0X : Ver = 0x%0x : Device = 0x%0x : Manuf = 0x%0x\n", 
+    console->debugOut("JTAG id = 0x%0X : Ver = 0x%0x : Device = 0x%0x : Manuf = 0x%0x\n", 
              device_id,
              (device_id & 0xF0000000) >> 28,
              (device_id & 0x0FFFF000) >> 12,
              (device_id & 0x00000FFE) >> 1);
    
     device_id = (device_id & 0x0FFFF000) >> 12;
-    statusOut("Reported JTAG device ID: 0x%0X\n", device_id);
+    console->statusOut("Reported JTAG device ID: 0x%0X\n", device_id);
     
     if (device_name == 0)
     {
@@ -352,7 +352,7 @@ void jtag1::deviceAutoConfig(void)
     }
     else
     {
-        debugOut("Looking for device: %s\n", device_name);
+        console->debugOut("Looking for device: %s\n", device_name);
 
         while (pDevice->name)
         {
@@ -372,18 +372,18 @@ void jtag1::deviceAutoConfig(void)
     {
         if (device_id != pDevice->device_id)
         {
-            statusOut("Configured for device ID: 0x%0X %s -- FORCED with %s\n",
+            console->statusOut("Configured for device ID: 0x%0X %s -- FORCED with %s\n",
                       pDevice->device_id, pDevice->name, device_name);
         }
         else
         {
-            statusOut("Configured for device ID: 0x%0X %s -- Matched with "
+            console->statusOut("Configured for device ID: 0x%0X %s -- Matched with "
                       "%s\n", pDevice->device_id, pDevice->name, device_name);
         }
     }
     else
     {
-        statusOut("Configured for device ID: 0x%0X %s\n",
+        console->statusOut("Configured for device ID: 0x%0X %s\n",
                   pDevice->device_id, pDevice->name);
     }
 
@@ -397,17 +397,17 @@ void jtag1::deviceAutoConfig(void)
 
 void jtag1::initJtagBox(void)
 {
-    statusOut("JTAG config starting.\n");
+    console->statusOut("JTAG config starting.\n");
 
     startJtagLink();
     changeBitRate(115200);
 
     uchar hw_ver = getJtagParameter(JTAG_P_HW_VERSION);
-    statusOut("Hardware Version: 0x%02x\n", hw_ver);
+    console->statusOut("Hardware Version: 0x%02x\n", hw_ver);
     //check(hw_ver == 0xc0, "JTAG ICE: Unknown hardware version");
 
     uchar sw_ver = getJtagParameter(JTAG_P_SW_VERSION);
-    statusOut("Software Version: 0x%02x\n", sw_ver);
+    console->statusOut("Software Version: 0x%02x\n", sw_ver);
 
     interruptProgram();
 
@@ -416,13 +416,13 @@ void jtag1::initJtagBox(void)
     // Clear out the breakpoints.
     deleteAllBreakpoints();
 
-    statusOut("JTAG config complete.\n");
+    console->statusOut("JTAG config complete.\n");
 }
 
 
 void jtag1::initJtagOnChipDebugging(unsigned long bitrate)
 {
-    statusOut("Preparing the target device for On Chip Debugging.\n");
+    console->statusOut("Preparing the target device for On Chip Debugging.\n");
 
     uchar br;
     if (bitrate >= 1000000UL)
@@ -450,8 +450,8 @@ void jtag1::initJtagOnChipDebugging(unsigned long bitrate)
         jtagWrite(LOCK_SPACE_ADDR_OFFSET + 0, 1, lockBits);
     }
 
-    statusOut("\nDisabling lock bits:\n");
-    statusOut("  LockBits -> 0x%02x\n", *lockBits);
+    console->statusOut("\nDisabling lock bits:\n");
+    console->statusOut("  LockBits -> 0x%02x\n", *lockBits);
 
     if (lockBits)
     {
@@ -461,7 +461,7 @@ void jtag1::initJtagOnChipDebugging(unsigned long bitrate)
 
     // Ensure on-chip debug enable fuse is enabled ie '0'
     uchar *fuseBits = 0;
-    statusOut("\nEnabling on-chip debugging:\n");
+    console->statusOut("\nEnabling on-chip debugging:\n");
     fuseBits = jtagRead(FUSE_SPACE_ADDR_OFFSET + 0, 3);
 
     if ((fuseBits[1] & FUSE_OCDEN) == FUSE_OCDEN)

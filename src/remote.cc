@@ -136,7 +136,7 @@ int getDebugChar(void)
 
     if (result == 0) // gdb exited
     {
-	statusOut("gdb exited.\n");
+	console->statusOut("gdb exited.\n");
 	theJtagICE->resumeProgram();
 	delete theJtagICE;
 	exit(0);
@@ -159,7 +159,7 @@ int checkForDebugChar(void)
 
     if (result == 0) // gdb exited
     {
-	statusOut("gdb exited.\n");
+	console->statusOut("gdb exited.\n");
 	theJtagICE->resumeProgram();
 	exit(0);
     }
@@ -420,10 +420,10 @@ bool handleInterrupt(void)
     bool result;
 
     // Set a breakpoint at return address
-    debugOut("INTERRUPT\n");
+    console->debugOut("INTERRUPT\n");
     unsigned int intrSP = readSP();
     unsigned int retPC = readBWord(intrSP + 1) << 1;
-    debugOut("INT SP = %x, retPC = %x\n", intrSP, retPC);
+    console->debugOut("INT SP = %x, retPC = %x\n", intrSP, retPC);
 
     bool needBP = !theJtagICE->codeBreakpointAt(retPC);
 
@@ -624,7 +624,7 @@ void talkToGdb(void)
 
     ptr = getpacket();
 
-    debugOut("GDB: <%s>\n", ptr);
+    console->debugOut("GDB: <%s>\n", ptr);
 
     // default empty response
     remcomOutBuffer[0] = 0;
@@ -666,7 +666,7 @@ void talkToGdb(void)
 	   (*(ptr++) == ':') &&
 	   (length > 0))
 	{
-	    debugOut("\nGDB: Write %d bytes to 0x%X\n",
+	    console->debugOut("\nGDB: Write %d bytes to 0x%X\n",
 		      length, addr);
 
             // There is no gaurantee that gdb will send a word aligned stream
@@ -719,7 +719,7 @@ void talkToGdb(void)
 	   (*(ptr++) == ',') &&
 	   (hexToInt(&ptr, &length)))
 	{
-	    debugOut("\nGDB: Read %d bytes from 0x%X\n", length, addr);
+	    console->debugOut("\nGDB: Read %d bytes from 0x%X\n", length, addr);
 	    jtagBuffer = theJtagICE->jtagRead(addr, length);
 	    if (jtagBuffer)
 	    {
@@ -745,7 +745,7 @@ void talkToGdb(void)
 	// R0..R31 are at locations 0..31
 	// SP is at 0x5D & 0x5E
 	// SREG is at 0x5F
-	debugOut("\nGDB: (Registers)Read %d bytes from 0x%X\n",
+	console->debugOut("\nGDB: (Registers)Read %d bytes from 0x%X\n",
 		  0x20, 0x00 + DATA_SPACE_ADDR_OFFSET);
 	jtagBuffer = theJtagICE->jtagRead(0x00 + DATA_SPACE_ADDR_OFFSET, 0x20);
 
@@ -796,7 +796,7 @@ void talkToGdb(void)
         regBuffer[36] = (unsigned char)((newPC & 0xff00) >> 8);
         regBuffer[37] = (unsigned char)((newPC & 0xff0000) >> 16);
         regBuffer[38] = (unsigned char)((newPC & 0xff000000) >> 24);
-        debugOut("PC = %x\n", newPC);
+        console->debugOut("PC = %x\n", newPC);
 
         if (newPC == PC_INVALID)
             error(1);
@@ -816,7 +816,7 @@ void talkToGdb(void)
             int i, j, regcount;
             gdb_io_reg_def_type *io_reg_defs;
 
-            debugOut("\nGDB: (io registers) Read %d bytes from 0x%X\n",
+            console->debugOut("\nGDB: (io registers) Read %d bytes from 0x%X\n",
                      0x40, 0x20);
 
             /* If there is an io_reg_defs for this device then respond */
@@ -1051,7 +1051,7 @@ void talkToGdb(void)
 		mode = ACCESS_DATA;
 		break;
 	    default:
-		debugOut("Unknown breakpoint type from GDB.\n");
+		console->debugOut("Unknown breakpoint type from GDB.\n");
 		delete theJtagICE;
 		exit(1);
 	    }
@@ -1076,7 +1076,7 @@ void talkToGdb(void)
     // reply to the request
     if (!dontSendReply)
     {
-        debugOut("->GDB: %s\n", remcomOutBuffer);
+        console->debugOut("->GDB: %s\n", remcomOutBuffer);
 	putpacket(remcomOutBuffer);
     }
 }

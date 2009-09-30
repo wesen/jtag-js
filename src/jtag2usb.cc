@@ -136,7 +136,7 @@ static usb_dev_handle *opendev(const char *jtagDeviceName, emulator emu_type,
 		  unixCheck(rv >= 0, "cannot read serial number \"%s\"",
 			    usb_strerror());
 
-		  debugOut("Found JTAG ICE, serno: %s\n", string);
+		  console->debugOut("Found JTAG ICE, serno: %s\n", string);
 		  if (serno != NULL)
 		    {
 		      /*
@@ -147,7 +147,7 @@ static usb_dev_handle *opendev(const char *jtagDeviceName, emulator emu_type,
 		      x = strlen(string) - strlen(serno);
 		      if (strcasecmp(string + x, serno) != 0)
 			{
-			  debugOut("serial number doesn't match\n");
+			  console->debugOut("serial number doesn't match\n");
 			  usb_close(udev);
 			  continue;
 			}
@@ -163,21 +163,21 @@ static usb_dev_handle *opendev(const char *jtagDeviceName, emulator emu_type,
     }
   if (!found)
   {
-    statusOut("did not find any%s USB device \"%s\"\n",
+    console->statusOut("did not find any%s USB device \"%s\"\n",
 							serno? " (matching)": "", jtagDeviceName);
     return NULL;
   }
 
   if (dev->config == NULL)
   {
-      statusOut("USB device has no configuration\n");
+      console->statusOut("USB device has no configuration\n");
     fail:
       usb_close(udev);
       return NULL;
   }
   if (usb_set_configuration(udev, dev->config[0].bConfigurationValue))
   {
-      statusOut("error setting configuration %d: %s\n",
+      console->statusOut("error setting configuration %d: %s\n",
                 dev->config[0].bConfigurationValue,
                 usb_strerror());
       goto fail;
@@ -185,7 +185,7 @@ static usb_dev_handle *opendev(const char *jtagDeviceName, emulator emu_type,
   usb_interface = dev->config[0].interface[0].altsetting[0].bInterfaceNumber;
   if (usb_claim_interface(udev, usb_interface))
   {
-      statusOut("error claiming interface %d: %s\n",
+      console->statusOut("error claiming interface %d: %s\n",
                 usb_interface, usb_strerror());
       goto fail;
   }

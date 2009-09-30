@@ -69,7 +69,7 @@ bool jtag1::addBreakpoint(unsigned int address, bpType type, unsigned int length
 {
     breakpoint *bp;
 
-    debugOut("BP ADD type: %d  addr: 0x%x ", type, address);
+    console->debugOut("BP ADD type: %d  addr: 0x%x ", type, address);
 
     // Respect overall breakpoint limit
     if (numBreakpointsCode + numBreakpointsData == MAX_BREAKPOINTS)
@@ -81,7 +81,7 @@ bool jtag1::addBreakpoint(unsigned int address, bpType type, unsigned int length
     {
 	if (numBreakpointsCode == MAX_BREAKPOINTS_CODE)
 	{
-	    debugOut("FAILED\n");
+	    console->debugOut("FAILED\n");
 	    return false;
 	}
 
@@ -95,7 +95,7 @@ bool jtag1::addBreakpoint(unsigned int address, bpType type, unsigned int length
     {
 	if (numBreakpointsData == MAX_BREAKPOINTS_DATA)
 	{
-	    debugOut("FAILED\n");
+	    console->debugOut("FAILED\n");
 	    return false;
 	}
 
@@ -105,7 +105,7 @@ bool jtag1::addBreakpoint(unsigned int address, bpType type, unsigned int length
     bp->address = address;
     bp->type = type;
 
-    debugOut(" ADDED\n");
+    console->debugOut(" ADDED\n");
     return true;
 }
 
@@ -115,7 +115,7 @@ bool jtag1::deleteBreakpoint(unsigned int address, bpType type, unsigned int len
     breakpoint *bp;
     int *numBp;
 
-    debugOut("BP DEL type: %d  addr: 0x%x ", type, address);
+    console->debugOut("BP DEL type: %d  addr: 0x%x ", type, address);
 
     if (type == CODE)
     {
@@ -136,13 +136,13 @@ bool jtag1::deleteBreakpoint(unsigned int address, bpType type, unsigned int len
     {
 	if (bp[i].type == type && bp[i].address == address)
 	{
-	    debugOut("REMOVED %d\n", i);
+	    console->debugOut("REMOVED %d\n", i);
 	    (*numBp)--;
 	    memmove(&bp[i], &bp[i + 1], (*numBp - i) * sizeof(breakpoint));
 	    return true;
 	}
     }
-    debugOut("FAILED\n");
+    console->debugOut("FAILED\n");
     return false;
 }
 
@@ -153,7 +153,7 @@ void jtag1::updateBreakpoints(void)
     int bpC = 0, bpD = 0;
     breakpoint *bp;
 
-    debugOut("updateBreakpoints\n");
+    console->debugOut("updateBreakpoints\n");
 
     // BP 0 (aka breakpoint Z0).
     // Send breakpoint array down to the target.

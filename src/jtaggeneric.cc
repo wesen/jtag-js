@@ -316,7 +316,7 @@ void jtag::changeLocalBitRate(int newBitRate)
 	newPortSpeed = B115200;
 	break;
     default:
-	debugOut("unsupported bitrate: %d\n", newBitRate);
+	console->debugOut("unsupported bitrate: %d\n", newBitRate);
 	exit(1);
     }
 
@@ -395,15 +395,15 @@ void jtag::jtag_flash_image(BFDimage *image, BFDmemoryType memtype,
         // First address must start on page boundary.
         addr = page_addr(image->first_address, memtype);
 
-        statusOut("Downloading %s image to target.", image->name);
-        statusFlush();
+        console->statusOut("Downloading %s image to target.", image->name);
+        console->statusFlush();
 
         while (addr < image->last_address)
         {
             if (!pageIsEmpty(image, addr, page_size, memtype))
             {
                 // Must also convert address to gcc-hacked addr for jtagWrite
-                debugOut("Writing page at addr 0x%.4lx size 0x%lx\n",
+                console->debugOut("Writing page at addr 0x%.4lx size 0x%lx\n",
                          addr, page_size);
 
                 // Create raw data buffer
@@ -414,17 +414,17 @@ void jtag::jtag_flash_image(BFDimage *image, BFDmemoryType memtype,
                                 page_size,
                                 buf),
                       "Error writing to target");
-                // No need for statusOut here, since jtagWrite does it.
+                // No need for console->statusOut here, since jtagWrite does it.
             }
 
             addr += page_size;
 
-            statusOut(".");
-            statusFlush();
+            console->statusOut(".");
+            console->statusFlush();
         }
 
-        statusOut("\n");
-        statusFlush();
+        console->statusOut("\n");
+        console->statusFlush();
     }
 
     if (verify)
@@ -434,13 +434,13 @@ void jtag::jtag_flash_image(BFDimage *image, BFDmemoryType memtype,
         // First address must start on page boundary.
         addr = page_addr(image->first_address, memtype);
 
-        statusOut("\nVerifying %s", image->name);
-        statusFlush();
+        console->statusOut("\nVerifying %s", image->name);
+        console->statusFlush();
 
         while (addr < image->last_address)
         {
             // Must also convert address to gcc-hacked addr for jtagWrite
-            debugOut("Verifying page at addr 0x%.4lx size 0x%lx\n",
+            console->debugOut("Verifying page at addr 0x%.4lx size 0x%lx\n",
                      addr, page_size);
 
             response = jtagRead(BFDmemorySpaceOffset[memtype] + addr,
@@ -454,10 +454,10 @@ void jtag::jtag_flash_image(BFDimage *image, BFDmemoryType memtype,
                 {
                     if (image->image[c].val != response[i])
                     {
-                        statusOut("\nError verifying target addr %.4x. "
+                        console->statusOut("\nError verifying target addr %.4x. "
                                   "Expect [0x%02x] Got [0x%02x]",
                                   c, image->image[c].val, response[i]);
-                        statusFlush();
+                        console->statusFlush();
                         is_verified = false;
                     }
                 }
@@ -465,13 +465,13 @@ void jtag::jtag_flash_image(BFDimage *image, BFDmemoryType memtype,
 
             addr += page_size;
 
-            statusOut(".");
-            statusFlush();
+            console->statusOut(".");
+            console->statusFlush();
         }
         delete [] response;
 
-        statusOut("\n");
-        statusFlush();
+        console->statusOut("\n");
+        console->statusFlush();
 
         check(is_verified, "\nVerification failed!");
     }
@@ -496,7 +496,7 @@ void jtag::jtagWriteFuses(char *fuses)
     fuseBits[1] = (uchar)temp[1];
     fuseBits[2] = (uchar)temp[2];
 
-    statusOut("\nWriting Fuse Bytes:\n");
+    console->statusOut("\nWriting Fuse Bytes:\n");
     jtagDisplayFuses(fuseBits);
 
     enableProgramming();
@@ -520,7 +520,7 @@ void jtag::jtagReadFuses(void)
     uchar *fuseBits = 0;
 
     enableProgramming();
-    statusOut("\nReading Fuse Bytes:\n");
+    console->statusOut("\nReading Fuse Bytes:\n");
     fuseBits = jtagRead(FUSE_SPACE_ADDR_OFFSET + 0, 3);
     disableProgramming();
 
@@ -534,9 +534,9 @@ void jtag::jtagReadFuses(void)
 
 void jtag::jtagDisplayFuses(uchar *fuseBits)
 {
-    statusOut("  Extended Fuse byte -> 0x%02x\n", fuseBits[2]);
-    statusOut("      High Fuse byte -> 0x%02x\n", fuseBits[1]);
-    statusOut("       Low Fuse byte -> 0x%02x\n", fuseBits[0]);
+    console->statusOut("  Extended Fuse byte -> 0x%02x\n", fuseBits[2]);
+    console->statusOut("      High Fuse byte -> 0x%02x\n", fuseBits[1]);
+    console->statusOut("       Low Fuse byte -> 0x%02x\n", fuseBits[0]);
 }
 
 
@@ -560,7 +560,7 @@ void jtag::jtagWriteLockBits(char *lock)
 
     lockBits[0] = (uchar)temp[0];
 
-    statusOut("\nWriting Lock Bits -> 0x%02x\n", lockBits[0]);
+    console->statusOut("\nWriting Lock Bits -> 0x%02x\n", lockBits[0]);
 
     enableProgramming();
 
@@ -583,7 +583,7 @@ void jtag::jtagReadLockBits(void)
     uchar *lockBits = 0;
 
     enableProgramming();
-    statusOut("\nReading Lock Bits:\n");
+    console->statusOut("\nReading Lock Bits:\n");
     lockBits = jtagRead(LOCK_SPACE_ADDR_OFFSET + 0, 1);
     disableProgramming();
 
@@ -597,14 +597,14 @@ void jtag::jtagReadLockBits(void)
 
 void jtag::jtagDisplayLockBits(uchar *lockBits)
 {
-    statusOut("Lock bits -> 0x%02x\n\n", lockBits[0]);
+    console->statusOut("Lock bits -> 0x%02x\n\n", lockBits[0]);
 
-    statusOut("    Bit 7 [ Reserved ] -> %d\n", (lockBits[0] >> 7) & 1);
-    statusOut("    Bit 6 [ Reserved ] -> %d\n", (lockBits[0] >> 6) & 1);
-    statusOut("    Bit 5 [ BLB12    ] -> %d\n", (lockBits[0] >> 5) & 1);
-    statusOut("    Bit 4 [ BLB11    ] -> %d\n", (lockBits[0] >> 4) & 1);
-    statusOut("    Bit 3 [ BLB02    ] -> %d\n", (lockBits[0] >> 3) & 1);
-    statusOut("    Bit 2 [ BLB01    ] -> %d\n", (lockBits[0] >> 2) & 1);
-    statusOut("    Bit 1 [ LB2      ] -> %d\n", (lockBits[0] >> 1) & 1);
-    statusOut("    Bit 0 [ LB1      ] -> %d\n", (lockBits[0] >> 0) & 1);
+    console->statusOut("    Bit 7 [ Reserved ] -> %d\n", (lockBits[0] >> 7) & 1);
+    console->statusOut("    Bit 6 [ Reserved ] -> %d\n", (lockBits[0] >> 6) & 1);
+    console->statusOut("    Bit 5 [ BLB12    ] -> %d\n", (lockBits[0] >> 5) & 1);
+    console->statusOut("    Bit 4 [ BLB11    ] -> %d\n", (lockBits[0] >> 4) & 1);
+    console->statusOut("    Bit 3 [ BLB02    ] -> %d\n", (lockBits[0] >> 3) & 1);
+    console->statusOut("    Bit 2 [ BLB01    ] -> %d\n", (lockBits[0] >> 2) & 1);
+    console->statusOut("    Bit 1 [ LB2      ] -> %d\n", (lockBits[0] >> 1) & 1);
+    console->statusOut("    Bit 0 [ LB1      ] -> %d\n", (lockBits[0] >> 0) & 1);
 }

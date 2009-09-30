@@ -122,7 +122,7 @@ bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
 	int maxfd;
 	fd_set readfds;
 
-	//	debugOut("Waiting for input.\n");
+	//	console->debugOut("Waiting for input.\n");
 
 	// Check for input from JTAG ICE (breakpoint, sleep, info, power)
 	// or gdb (user break)
@@ -155,11 +155,11 @@ bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
 			int c = getDebugChar();
 			if (c == 3) // interrupt
 				{
-		      debugOut("interrupted by GDB\n");
+		      console->debugOut("interrupted by GDB\n");
 		      gdbInterrupt = true;
 				}
 			else
-		    debugOut("Unexpected GDB input `%02x'\n", c);
+		    console->debugOut("Unexpected GDB input `%02x'\n", c);
 		}
 #endif
 
@@ -173,7 +173,7 @@ bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
 		    // XXX if not event, should push frame back into queue...
 		    // We really need a queue of received frames.
 		    if (seqno != 0xffff)
-					debugOut("Expected event packet, got other response");
+					console->debugOut("Expected event packet, got other response");
 		    else if (!nonbreaking_events[evtbuf[8] - EVT_BREAK])
 		      {
 						switch (evtbuf[8])

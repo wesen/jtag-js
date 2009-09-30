@@ -187,7 +187,7 @@ bool jtag2::addBreakpoint(unsigned int address, bpType type, unsigned int length
 {
     int bp_i;
 
-    debugOut("BP ADD type: %d  addr: 0x%x ", type, address);
+    console->debugOut("BP ADD type: %d  addr: 0x%x ", type, address);
 
 
     // Perhaps we have already set this breakpoint, and it is just
@@ -199,7 +199,7 @@ bool jtag2::addBreakpoint(unsigned int address, bpType type, unsigned int length
 	  if ((bp[bp_i].address == address) && (bp[bp_i].type == type))
 	    {
 		bp[bp_i].enabled = true;
-		debugOut("ENABLED\n");
+		console->debugOut("ENABLED\n");
 		break;
             }
 	  bp_i++;
@@ -226,7 +226,7 @@ bool jtag2::addBreakpoint(unsigned int address, bpType type, unsigned int length
 	  // Sorry.. out of room :(
 	  if ((bp_i + 1) == MAX_TOTAL_BREAKPOINTS2)
             {
-		debugOut("FAILED\n");
+		console->debugOut("FAILED\n");
 		return false;
             }
 
@@ -254,7 +254,7 @@ bool jtag2::addBreakpoint(unsigned int address, bpType type, unsigned int length
 	      unsigned int mask = 1 << (bitno - 1);
 	      if (mask != length)
                 {
-		    debugOut("FAILED: length not power of 2 in range BP\n");
+		    console->debugOut("FAILED: length not power of 2 in range BP\n");
 		    bp[bp_i].last = true;
 		    bp[bp_i].enabled = false;
 		    return false;
@@ -262,7 +262,7 @@ bool jtag2::addBreakpoint(unsigned int address, bpType type, unsigned int length
 	      mask--;
 	      if ((address & mask) != 0)
                 {
-		    debugOut("FAILED: address in range BP is not base-aligned\n");
+		    console->debugOut("FAILED: address in range BP is not base-aligned\n");
 		    bp[bp_i].last = true;
 		    bp[bp_i].enabled = false;
 		    return false;
@@ -275,7 +275,7 @@ bool jtag2::addBreakpoint(unsigned int address, bpType type, unsigned int length
 	      // need to find it afterwards
 	      if (!addBreakpoint(mask, DATA_MASK, 1))
                 {
-		    debugOut("FAILED\n");
+		    console->debugOut("FAILED\n");
 		    bp[bp_i].last = true;
 		    bp[bp_i].enabled = false;
 		    return false;
@@ -290,7 +290,7 @@ bool jtag2::addBreakpoint(unsigned int address, bpType type, unsigned int length
 
 	      bp[bp_i].mask_pointer = j;
 
-	      debugOut("range BP ADDED: 0x%x/0x%x\n", address, mask);
+	      console->debugOut("range BP ADDED: 0x%x/0x%x\n", address, mask);
 	  }
 
       }
@@ -310,7 +310,7 @@ bool jtag2::addBreakpoint(unsigned int address, bpType type, unsigned int length
 
     if (!layoutBreakpoints())
       {
-	  debugOut("Not enough room in ICE for breakpoint. FAILED.\n");
+	  console->debugOut("Not enough room in ICE for breakpoint. FAILED.\n");
 	  bp[bp_i].enabled = false;
 	  bp[bp_i].toadd = false;
 
@@ -328,7 +328,7 @@ bool jtag2::deleteBreakpoint(unsigned int address, bpType type, unsigned int len
 {
     int bp_i;
 
-    debugOut("BP DEL type: %d  addr: 0x%x ", type, address);
+    console->debugOut("BP DEL type: %d  addr: 0x%x ", type, address);
 
     bp_i = 0;
     while (!bp[bp_i].last)
@@ -336,7 +336,7 @@ bool jtag2::deleteBreakpoint(unsigned int address, bpType type, unsigned int len
 	  if ((bp[bp_i].address == address) && (bp[bp_i].type == type))
             {
 		bp[bp_i].enabled = false;
-		debugOut("DISABLED\n");
+		console->debugOut("DISABLED\n");
 		break;
             }
 	  bp_i++;
@@ -345,7 +345,7 @@ bool jtag2::deleteBreakpoint(unsigned int address, bpType type, unsigned int len
     // If it somehow failed, got to tell..
     if (bp[bp_i].enabled || (bp[bp_i].address != address) || (bp[bp_i].type != type))
       {
-	  debugOut("FAILED\n");
+	  console->debugOut("FAILED\n");
 	  return false;
       }
 
@@ -440,7 +440,7 @@ bool jtag2::layoutBreakpoints(void)
 		      if (!remaining_bps[BREAKPOINT2_DATA_MASK] ||
 			  !remaining_bps[BREAKPOINT2_FIRST_DATA])
 			{
-			    debugOut("Not enough room to store range breakpoint\n");
+			    console->debugOut("Not enough room to store range breakpoint\n");
 			    bp[bp[bp_i].mask_pointer].enabled = false;
 			    bp[bp[bp_i].mask_pointer].toadd = false;
 			    bp[bp_i].enabled = false;
@@ -465,7 +465,7 @@ bool jtag2::layoutBreakpoints(void)
 
 		if (bpnum > MAX_BREAKPOINTS2)
 		  {
-		      debugOut("No more room for data breakpoints.\n");
+		      console->debugOut("No more room for data breakpoints.\n");
 		      hadroom = false;
 		      break;
 		  }
@@ -486,7 +486,7 @@ bool jtag2::layoutBreakpoints(void)
 	  bpnum = 0x00;
 	  while (!remaining_bps[bpnum] && (bpnum <= MAX_BREAKPOINTS2))
             {
-		debugOut("Slot %d full\n", bpnum);
+		console->debugOut("Slot %d full\n", bpnum);
 		bpnum++;
             }
 
@@ -507,7 +507,7 @@ bool jtag2::layoutBreakpoints(void)
             {
 		if (bpnum == 0xFF)
 		  {
-		      debugOut("No more room for code breakpoints.\n");
+		      console->debugOut("No more room for code breakpoints.\n");
 		      hadroom = false;
 		      break;
 		  }
@@ -535,7 +535,7 @@ void jtag2::updateBreakpoints(void)
 
 	  if (bp[bp_i].toremove)
             {
-		debugOut("Breakpoint deleted in ICE. slot: %d  type: %d  addr: 0x%x\n",
+		console->debugOut("Breakpoint deleted in ICE. slot: %d  type: %d  addr: 0x%x\n",
 			 bp[bp_i].bpnum, bp[bp_i].type, bp[bp_i].address);
 
 		cmd[1] = bp[bp_i].bpnum;
@@ -569,7 +569,7 @@ void jtag2::updateBreakpoints(void)
 
 	  if (bp[bp_i].toadd && bp[bp_i].enabled)
             {
-		debugOut("Breakpoint added in ICE. slot: %d  type: %d  addr: 0x%x\n",
+		console->debugOut("Breakpoint added in ICE. slot: %d  type: %d  addr: 0x%x\n",
 			 bp[bp_i].bpnum, bp[bp_i].type, bp[bp_i].address);
 
 		cmd[1] = bp[bp_i].type;

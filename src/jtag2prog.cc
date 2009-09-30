@@ -208,7 +208,7 @@ static void jtag_create_image(bfd *file, asection *section,
 
     if ((addr = get_section_addr(section, memtype)) != 0xffffff)
     {
-        debugOut("Getting section contents, addr=0x%lx size=0x%lx\n",
+        console->debugOut("Getting section contents, addr=0x%lx size=0x%lx\n",
                  addr, size);
 
         // Read entire section into buffer, at correct byte address.
@@ -232,7 +232,7 @@ static void jtag_create_image(bfd *file, asection *section,
             image->first_address = addr;
             image->first_address_ok = true;
         }
-        debugOut("%s Image create: Adding %s at addr 0x%lx size %d (0x%lx)\n",
+        console->debugOut("%s Image create: Adding %s at addr 0x%lx size %d (0x%lx)\n",
                  BFDmemoryTypeString[memtype], name, addr, size, size);
 
         // Indicate image has data
@@ -301,7 +301,7 @@ void jtag2::downloadToTarget(const char* filename, bool program, bool verify)
     // Set the flash page and eeprom page sizes (These are device dependent)
     page_size = get_page_size(MEM_FLASH);
 
-    debugOut("Flash page size: 0x%0x\nEEPROM page size: 0x%0x\n",
+    console->debugOut("Flash page size: 0x%0x\nEEPROM page size: 0x%0x\n",
              page_size, get_page_size(MEM_EEPROM));
 
 #if notneeded // already addressed by setting the device descriptor
@@ -333,5 +333,5 @@ void jtag2::downloadToTarget(const char* filename, bool program, bool verify)
 
     unixCheck(bfd_close(file), "Error closing %s", filename);
 
-    statusOut("\nDownload complete.\n");
+    console->statusOut("\nDownload complete.\n");
 }

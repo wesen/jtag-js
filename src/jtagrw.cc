@@ -93,7 +93,7 @@ uchar *jtag1::jtagRead(unsigned long addr, unsigned int numBytes)
 	return response;
     }
 
-    debugOut("jtagRead ");
+    console->debugOut("jtagRead ");
     whichSpace = memorySpace(&addr);
     if (whichSpace)
     {
@@ -168,7 +168,7 @@ bool jtag1::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
     if (numBytes == 0)
 	return true;
 
-    debugOut("jtagWrite ");
+    console->debugOut("jtagWrite ");
     whichSpace = memorySpace(&addr);
 
     if (whichSpace)
@@ -180,14 +180,14 @@ bool jtag1::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
 	// We don't handle odd lengths or start addresses
 	if ((addr & 1))
         {
-            debugOut ("\nOdd pgm wr addr\n");
+            console->debugOut ("\nOdd pgm wr addr\n");
 	    return false;
         }
 
         // Odd length: Write one more byte.
         if ((numBytes & 1))
         {
-            debugOut ("\nOdd pgm wr length\n");
+            console->debugOut ("\nOdd pgm wr length\n");
             numBytes+=1;
         }
 

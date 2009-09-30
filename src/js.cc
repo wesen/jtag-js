@@ -99,13 +99,13 @@ JavaScript::~JavaScript() {
 }
 
 JSBool jsGlobal_getDebugMode(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
-	*vp = BOOLEAN_TO_JSVAL(debugMode);
+	*vp = BOOLEAN_TO_JSVAL(Console::debugMode);
 	return JS_TRUE;
 }
 
 JSBool jsGlobal_setDebugMode(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
 	if (JSVAL_IS_BOOLEAN(*vp)) {
-		debugMode = JSVAL_TO_BOOLEAN(*vp);
+		Console::debugMode = JSVAL_TO_BOOLEAN(*vp);
 		return JS_TRUE;
 	} else {
 		return JS_FALSE;
@@ -168,7 +168,7 @@ bool JavaScript::init() {
 	if (!JS_DefineFunctions(cx, global, myjs_global_functions)) {
 		return false;
 	}
-	JS_DefineProperty(cx, global, "debug", BOOLEAN_TO_JSVAL(debugMode),
+	JS_DefineProperty(cx, global, "debug", BOOLEAN_TO_JSVAL(Console::debugMode),
 										jsGlobal_getDebugMode, jsGlobal_setDebugMode, JSPROP_PERMANENT);
 
 	jsJtag_registerClass(cx, global);

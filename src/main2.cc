@@ -23,8 +23,11 @@ void signal_handler(int signal) {
 }
 
 int main(int argc, char *argv[]) {
-	debugMode = true;
-	quietMode = true;
+	Console mainConsole;
+	console = &mainConsole;
+
+	Console::debugMode = true;
+	Console::quietMode = true;
 
 	myJS.init();
 

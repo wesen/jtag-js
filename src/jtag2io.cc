@@ -120,21 +120,21 @@ int jtag2::recvFrame(unsigned char *&msg, unsigned short &seqno)
 
     while (state != sDONE) {
 	if (state == sDATA) {
-	    debugOut("sDATA: reading %d bytes\n", msglen);
+	    console->debugOut("sDATA: reading %d bytes\n", msglen);
 	    rv = 0;
 	    if (ignorpkt) {
 		/* skip packet's contents */
 		for(l = 0; l < msglen; l++) {
 		    rv += timeout_read(&c, 1, JTAG_RESPONSE_TIMEOUT);
-		    debugOut("ign: 0x%02x\n", c);
+		    console->debugOut("ign: 0x%02x\n", c);
 		}
 	    } else {
 		rv += timeout_read(buf + 8, msglen, JTAG_RESPONSE_TIMEOUT);
-		debugOut("read: ");
+		console->debugOut("read: ");
 		for (l = 0; l < msglen; l++) {
-		    debugOut(" %02x", buf[l + 8]);
+		    console->debugOut(" %02x", buf[l + 8]);
 		}
-		debugOut("\n");
+		console->debugOut("\n");
 	    }
 	    if (rv == 0)
 		/* timeout */
@@ -143,10 +143,10 @@ int jtag2::recvFrame(unsigned char *&msg, unsigned short &seqno)
 	    rv = timeout_read(&c, 1, JTAG_RESPONSE_TIMEOUT);
 	    if (rv == 0) {
 		/* timeout */
-		debugOut("recv: timeout\n");
+		console->debugOut("recv: timeout\n");
 		break;
 	    }
-	    //	    debugOut("recv: 0x%02x\n", c);
+	    //	    console->debugOut("recv: 0x%02x\n", c);
 	}
 	checksum ^= c;
 
@@ -215,16 +215,16 @@ int jtag2::recvFrame(unsigned char *&msg, unsigned short &seqno)
 	case sCSUM2:
 	    buf[l++] = c;
 	    if (crcverify(buf, msglen + 10)) {
-		debugOut("CRC OK");
+		console->debugOut("CRC OK");
 		state = sDONE;
 	    } else {
-		debugOut("checksum error");
+		console->debugOut("checksum error");
 		delete [] buf;
 		return -1;
 	    }
 	    break;
 	default:
-	    debugOut("unknown state");
+	    console->debugOut("unknown state");
 	    delete [] buf;
 	    return -1;
 	}
@@ -248,7 +248,7 @@ int jtag2::recv(uchar *&msg)
     for (;;) {
 	if ((rv = recvFrame(msg, r_seqno)) <= 0)
 	    return rv;
-	debugOut("\nGot message seqno %d (command_sequence == %d)\n",
+	console->debugOut("\nGot message seqno %d (command_sequence == %d)\n",
 		 r_seqno, command_sequence);
 	if (r_seqno == command_sequence) {
 	    if (++command_sequence == 0xffff)
@@ -262,7 +262,7 @@ int jtag2::recv(uchar *&msg)
 	    return rv;
 	}
 	if (r_seqno == 0xffff) {
-	    debugOut("\ngot asynchronous event: 0x%02x\n",
+	    console->debugOut("\ngot asynchronous event: 0x%02x\n",
 		     msg[8]);
 	    // XXX should we queue that event up somewhere?
 	    // How to process it?  Register event handlers
@@ -270,7 +270,7 @@ int jtag2::recv(uchar *&msg)
 	    // For now, the only place that cares is jtagContinue
 	    // and it just calls recvFrame and handles events directly. 
 	} else {
-	    debugOut("\ngot wrong sequence number, %u != %u\n",
+	    console->debugOut("\ngot wrong sequence number, %u != %u\n",
 		     r_seqno, command_sequence);
 	}
 	delete [] msg;
@@ -296,13 +296,13 @@ bool jtag2::sendJtagCommand(uchar *command, int commandSize, int &tries,
     check(tries++ < MAX_JTAG_COMM_ATTEMPS,
 	      "JTAG ICE: Cannot synchronise");
 
-    debugOut("\ncommand[0x%02x (%s), %d]: ",
+    console->debugOut("\ncommand[0x%02x (%s), %d]: ",
 	     command[0], jtagCmdToString(command[0]), tries);
 
     for (int i = 0; i < commandSize; i++)
-	debugOut("%.2X ", command[i]);
+	console->debugOut("%.2X ", command[i]);
 
-    debugOut("\n");
+    console->debugOut("\n");
 
     sendFrame(command, commandSize);
 
@@ -312,15 +312,15 @@ bool jtag2::sendJtagCommand(uchar *command, int commandSize, int &tries,
     else if (msgsize < 1)
 	return false;
 
-    debugOut("response: ");
+    console->debugOut("response: ");
     if (msgsize > 0) {
-      debugOut("%s ", jtagRspToString(msg[0]));
+      console->debugOut("%s ", jtagRspToString(msg[0]));
     }
     for (int i = 0; i < msgsize; i++)
     {
-	debugOut("%.2X ", msg[i]);
+	console->debugOut("%.2X ", msg[i]);
     }
-    debugOut("\n");
+    console->debugOut("\n");
 
     unsigned char c = msg[0];
 
@@ -351,7 +351,7 @@ bool jtag2::doJtagCommand(uchar *command, int  commandSize,
 	if (tryCount > 3 && ctrlPipe != -1)
 	  {
 	    /* signal the USB daemon to reset the EPs */
-	    debugOut("Resetting EPs...\n");
+	    console->debugOut("Resetting EPs...\n");
 	    char cmd[1] = { 'c' };
 	    (void)write(ctrlPipe, cmd, 1);
 	  }
@@ -426,7 +426,7 @@ void jtag2::setDeviceDescriptor(jtag_device_def_type *dev)
 /** Attempt to synchronise with JTAG at specified bitrate **/
 bool jtag2::synchroniseAt(int bitrate)
 {
-    debugOut("Attempting synchronisation at bitrate %d\n", bitrate);
+    console->debugOut("Attempting synchronisation at bitrate %d\n", bitrate);
 
     changeLocalBitRate(bitrate);
 
@@ -440,26 +440,26 @@ bool jtag2::synchroniseAt(int bitrate)
 	    check(signonmsg[0] == RSP_SIGN_ON && msgsize > 17,
 		  "Unexpected response to sign-on command");
 	    signonmsg[msgsize - 1] = '\0';
-	    statusOut("Found a device: %s\n", signonmsg + 16);
-	    statusOut("Serial number:  %02x:%02x:%02x:%02x:%02x:%02x\n",
+	    console->statusOut("Found a device: %s\n", signonmsg + 16);
+	    console->statusOut("Serial number:  %02x:%02x:%02x:%02x:%02x:%02x\n",
 		   signonmsg[10], signonmsg[11], signonmsg[12],
 		   signonmsg[13], signonmsg[14], signonmsg[15]);
-	    debugOut("JTAG ICE mkII sign-on message:\n");
-	    debugOut("Communications protocol version: %u\n",
+	    console->debugOut("JTAG ICE mkII sign-on message:\n");
+	    console->debugOut("Communications protocol version: %u\n",
 		     (unsigned)signonmsg[1]);
-	    debugOut("M_MCU:\n");
-	    debugOut("  boot-loader FW version:        %u\n",
+	    console->debugOut("M_MCU:\n");
+	    console->debugOut("  boot-loader FW version:        %u\n",
 		     (unsigned)signonmsg[2]);
-	    debugOut("  firmware version:              %u.%02u\n",
+	    console->debugOut("  firmware version:              %u.%02u\n",
 		     (unsigned)signonmsg[4], (unsigned)signonmsg[3]);
-	    debugOut("  hardware version:              %u\n",
+	    console->debugOut("  hardware version:              %u\n",
 		     (unsigned)signonmsg[5]);
-	    debugOut("S_MCU:\n");
-	    debugOut("  boot-loader FW version:        %u\n",
+	    console->debugOut("S_MCU:\n");
+	    console->debugOut("  boot-loader FW version:        %u\n",
 		     (unsigned)signonmsg[6]);
-	    debugOut("  firmware version:              %u.%02u\n",
+	    console->debugOut("  firmware version:              %u.%02u\n",
 		     (unsigned)signonmsg[8], (unsigned)signonmsg[7]);
-	    debugOut("  hardware version:              %u\n",
+	    console->debugOut("  hardware version:              %u\n",
 		     (unsigned)signonmsg[9]);
 
 	    // The AVR Dragon always uses the full device descriptor.
@@ -530,7 +530,7 @@ void jtag2::deviceAutoConfig(void)
     jtag_device_def_type *pDevice = deviceDefinitions;
 
     // Auto config
-    debugOut("Automatic device detection: ");
+    console->debugOut("Automatic device detection: ");
 
     /* Set daisy chain information */
     configDaisyChain();
@@ -543,7 +543,7 @@ void jtag2::deviceAutoConfig(void)
 	device_id = resp[1] | (resp[2] << 8);
 	delete [] resp;
 
-	statusOut("Reported debugWire device ID: 0x%0X\n", device_id);
+	console->statusOut("Reported debugWire device ID: 0x%0X\n", device_id);
     }
     else
     {
@@ -552,14 +552,14 @@ void jtag2::deviceAutoConfig(void)
 	device_id = resp[1] | (resp[2] << 8) | (resp[3] << 16) | resp[4] << 24;
 	delete [] resp;
 
-	debugOut("JTAG id = 0x%0X : Ver = 0x%0x : Device = 0x%0x : Manuf = 0x%0x\n",
+	console->debugOut("JTAG id = 0x%0X : Ver = 0x%0x : Device = 0x%0x : Manuf = 0x%0x\n",
 		 device_id,
 		 (device_id & 0xF0000000) >> 28,
 		 (device_id & 0x0FFFF000) >> 12,
 		 (device_id & 0x00000FFE) >> 1);
 
 	device_id = (device_id & 0x0FFFF000) >> 12;
-	statusOut("Reported JTAG device ID: 0x%0X\n", device_id);
+	console->statusOut("Reported JTAG device ID: 0x%0X\n", device_id);
     }
 
     if (device_name == 0)
@@ -577,7 +577,7 @@ void jtag2::deviceAutoConfig(void)
     }
     else
     {
-        debugOut("Looking for device: %s\n", device_name);
+        console->debugOut("Looking for device: %s\n", device_name);
 
         while (pDevice->name)
         {
@@ -595,18 +595,18 @@ void jtag2::deviceAutoConfig(void)
     {
         if (device_id != pDevice->device_id)
         {
-            statusOut("Configured for device ID: 0x%0X %s -- FORCED with %s\n",
+            console->statusOut("Configured for device ID: 0x%0X %s -- FORCED with %s\n",
                       pDevice->device_id, pDevice->name, device_name);
         }
         else
         {
-            statusOut("Configured for device ID: 0x%0X %s -- Matched with "
+            console->statusOut("Configured for device ID: 0x%0X %s -- Matched with "
                       "%s\n", pDevice->device_id, pDevice->name, device_name);
         }
     }
     else
     {
-        statusOut("Configured for device ID: 0x%0X %s\n",
+        console->statusOut("Configured for device ID: 0x%0X %s\n",
                   pDevice->device_id, pDevice->name);
     }
 
@@ -620,7 +620,7 @@ void jtag2::deviceAutoConfig(void)
 
 void jtag2::initJtagBox(void)
 {
-    statusOut("JTAG config starting.\n");
+    console->statusOut("JTAG config starting.\n");
 
     if (device_name != 0)
     {
@@ -652,13 +652,13 @@ void jtag2::initJtagBox(void)
     // Clear out the breakpoints.
     deleteAllBreakpoints();
 
-    statusOut("JTAG config complete.\n");
+    console->statusOut("JTAG config complete.\n");
 }
 
 
 void jtag2::initJtagOnChipDebugging(unsigned long bitrate)
 {
-    statusOut("Preparing the target device for On Chip Debugging.\n");
+    console->statusOut("Preparing the target device for On Chip Debugging.\n");
 
     // debugWire cannot read or manipulate fuse or lock bits
     if (!useDebugWire)
@@ -690,8 +690,8 @@ void jtag2::initJtagOnChipDebugging(unsigned long bitrate)
 	  jtagWrite(LOCK_SPACE_ADDR_OFFSET + 0, 1, lockBits);
       }
 
-      statusOut("\nDisabling lock bits:\n");
-      statusOut("  LockBits -> 0x%02x\n", *lockBits);
+      console->statusOut("\nDisabling lock bits:\n");
+      console->statusOut("  LockBits -> 0x%02x\n", *lockBits);
 
       if (lockBits)
       {
@@ -701,7 +701,7 @@ void jtag2::initJtagOnChipDebugging(unsigned long bitrate)
 
       // Ensure on-chip debug enable fuse is enabled ie '0'
       uchar *fuseBits = 0;
-      statusOut("\nEnabling on-chip debugging:\n");
+      console->statusOut("\nEnabling on-chip debugging:\n");
       fuseBits = jtagRead(FUSE_SPACE_ADDR_OFFSET + 0, 3);
 
       if ((fuseBits[1] & FUSE_OCDEN) == FUSE_OCDEN)

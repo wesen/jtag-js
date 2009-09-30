@@ -95,7 +95,7 @@ uchar *jtag2::jtagRead(unsigned long addr, unsigned int numBytes)
 	return response;
     }
 
-    debugOut("jtagRead ");
+    console->debugOut("jtagRead ");
     uchar whichSpace = memorySpace(addr);
     bool needProgmode = whichSpace >= MTYPE_FLASH_PAGE;
     unsigned int pageSize = 0;
@@ -203,7 +203,7 @@ bool jtag2::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
     if (numBytes == 0)
 	return true;
 
-    debugOut("jtagWrite ");
+    console->debugOut("jtagWrite ");
     uchar whichSpace = memorySpace(addr);
 
     // Hack to detect the start of a GDB "load" command.  Iff this
@@ -216,7 +216,7 @@ bool jtag2::jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
 	addr == 0 &&
 	numBytes > 4)
     {
-	debugOut("Detected GDB \"load\" command, erasing flash.\n");
+	console->debugOut("Detected GDB \"load\" command, erasing flash.\n");
 	//whichSpace = MTYPE_FLASH_PAGE; // this will turn on progmode
 	eraseProgramMemory();
     }

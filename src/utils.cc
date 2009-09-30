@@ -27,43 +27,6 @@
 #include "avarice.h"
 #include "remote.h"
 
-bool debugMode = false;
-bool quietMode = false;
-
-void vdebugOut(const char *fmt, va_list args)
-{
-    if (debugMode)
-    {
-        (void)vfprintf(stderr, fmt, args);
-    }
-}
-
-void debugOut(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    vdebugOut(fmt, args);
-    va_end(args);
-}
-
-void vstatusOut(const char *fmt, va_list args)
-{
-    vprintf(fmt, args);
-}
-
-void statusOut(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    vstatusOut(fmt, args);
-    va_end(args);
-}
-
-void statusFlush()
-{
-    fflush(stdout);
-}
-
 static void check_1(bool printUnixError, const char *fmt, va_list args)
 {
     int en = errno;
@@ -72,26 +35,26 @@ static void check_1(bool printUnixError, const char *fmt, va_list args)
 
     va_copy(copy_args, args);
 
-		if (!quietMode) {
-			vstatusOut(fmt, copy_args);
+		if (!Console::quietMode) {
+			console->vStatusOut(fmt, copy_args);
 		}
 #else
-		if (!quietMode) {
-			vstatusOut(fmt, args);
+		if (!Console::quietMode) {
+			console->vStatusOut(fmt, args);
 		}
 #endif
 
-		if (!quietMode) {
+		if (!Console::quietMode) {
 			if (printUnixError) {
-				statusOut(": %s", strerror(en));
+				console->statusOut(": %s", strerror(en));
 			}
-			statusOut("\n");
+			console->statusOut("\n");
 		}
 
 #if 0 // GDB CODE XXX
-    vgdbOut(fmt, args);
+    console->vgdbOut(fmt, args);
     if (printUnixError)
-	gdbOut(": %s", strerror(en));
+			gdbOut(": %s", strerror(en));
     gdbOut("\n");
 #endif
 

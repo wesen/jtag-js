@@ -54,7 +54,9 @@ avarice_SOURCES =	\
 	utils.cc        \
 	gnu_getopt.c    \
 	gnu_getopt.h    \
-	gnu_getopt1.c
+	gnu_getopt1.c   \
+	console.cc      \
+	console.hh
 
 manuel_SOURCES =	\
 	crc16.h		\
@@ -82,6 +84,8 @@ manuel_SOURCES =	\
 	jtagrw.cc	\
 	main2.cc	\
 	utils.cc        \
+	console.cc      \
+	console.hh\
 	terminal-io.cc \
 	terminal-io.hh \
 	thread.hh\
