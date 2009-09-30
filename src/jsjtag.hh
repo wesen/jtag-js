@@ -9,7 +9,6 @@ bool jsJtag_registerClass(JSContext *cx, JSObject *global);
 class JSJtag {
 public:
 	jtag     *origJtag;
-	JSObject *breakpoints[MAX_TOTAL_BREAKPOINTS2];
 };
 
 

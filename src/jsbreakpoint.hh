@@ -9,7 +9,6 @@ class JSJtag;
 class JSBreakpoint {
 public:
 	JSJtag *jtag;
-	breakpoint2 *bp;
 };
 
 JSObject *jsBreakpoint_NewObject(JSContext *cx, JSObject *global,

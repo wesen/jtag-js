@@ -133,7 +133,6 @@ class jtag2: public jtag
     bool useDebugWire;
     bool is_xmega;
 
-
     unsigned char flashCache[MAX_FLASH_PAGE_SIZE];
     unsigned int flashCachePageAddr;
     unsigned char eepromCache[MAX_EEPROM_PAGE_SIZE];

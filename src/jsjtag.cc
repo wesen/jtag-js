@@ -176,17 +176,6 @@ void jsJtag_releaseNativeJtag(JSContext *cx, JSJtag *theJtag) {
 	if (theJtag->origJtag != NULL) {
 		delete theJtag->origJtag;
 
-		// clear breakpoints
-		for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
-			JSObject *bpObj = theJtag->breakpoints[i];
-			if (bpObj != NULL) {
-				JSBreakpoint *bp = (JSBreakpoint *)JS_GetInstancePrivate(cx, bpObj, &jsbreakpoint_class, NULL);
-				if (!bp)
-					continue;
-				bp->bp = NULL;
-			}
-		}
-
 		theJtag->origJtag = theJtagICE = NULL;
 	}
 }
@@ -209,11 +198,6 @@ JSBool jsJtag_createJtag(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		origJtag->initJtagBox();
 		origJtag->startPolling();
 
-		for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
-			JSObject *bpObj = jsBreakpoint_NewObject(cx, obj, privJtag, ((jtag2 *)origJtag)->bp + i);
-			privJtag->breakpoints[i] = bpObj;
-		}
-		
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	} catch (const char *msg) {
@@ -403,21 +387,6 @@ JSBool jsJtag_stopAt(JSContext *cx, JSObject *obj,
 	return JS_TRUE;
 }
 
-JSObject *jsJtag_getBreakpointForNativeBp(JSContext *cx, JSJtag *theJtag, breakpoint2 *origBp) {
-	for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
-		JSObject *bpObj = theJtag->breakpoints[i];
-		if (bpObj != NULL) {
-			JSBreakpoint *bp = (JSBreakpoint *)JS_GetInstancePrivate(cx, bpObj, &jsbreakpoint_class, NULL);
-			if (!bp)
-				continue;
-			if (bp->bp == origBp)
-				return bpObj;
-		}
-	}
-
-	return NULL;
-}
-
 JSBool jsJtag_getBreakpoints(JSContext *cx, JSObject *obj,
 														 uintN arg, jsval *argv, jsval *rval) {
 	JS_GET_PRIVATE_JTAG();
@@ -428,21 +397,12 @@ JSBool jsJtag_getBreakpoints(JSContext *cx, JSObject *obj,
     return JS_FALSE;
 
 	for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
-		JSObject *bpObj = privJtag->breakpoints[i];
-		printf("i: %d %p\n:", i, bpObj);
-		if (bpObj != NULL) {
-			JSBreakpoint *bp = (JSBreakpoint *)JS_GetInstancePrivate(cx, bpObj, &jsbreakpoint_class, NULL);
-			printf("i: %d %p %p\n:", i, bp, bp);
-			if (!bp)
-				continue;
-			breakpoint2 *origBp = bp->bp;
-			if (!origBp)
-				continue;
-			if (origBp->last)
-				break;
-			jsval objVal = OBJECT_TO_JSVAL(bpObj);
-			JS_SetElement(cx, arr, i, &objVal);
-		}
+		if (((jtag2 *)origJtag)->bp[i].last)
+			break;
+		
+		JSObject *bpObj = jsBreakpoint_NewObject(cx, obj, privJtag, ((jtag2 *)origJtag)->bp + i);
+		jsval objVal = OBJECT_TO_JSVAL(bpObj);
+		JS_SetElement(cx, arr, i, &objVal);
 	}
 
 	*rval = OBJECT_TO_JSVAL(arr);
@@ -516,10 +476,6 @@ JSJtag *jsjtag_init(JSContext *cx, JSObject *obj) {
 	}
 	memset(theJtag, 0, sizeof(*theJtag));
 	theJtag->origJtag = NULL;
-
-	for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
-		theJtag->breakpoints[i] = NULL;
-	}
 
 	if (!JS_SetPrivate(cx, obj, theJtag)) {
 		JS_ReportError(cx, "Could not set private JTAG object");
