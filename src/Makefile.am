@@ -88,4 +88,6 @@ manuel_SOURCES =	\
 	js.cc \
 	js.hh \
 	jsjtag.cc \
-	jsjtag.hh
+	jsjtag.hh \
+	jsbreakpoint.hh \
+	jsbreakpoint.cc

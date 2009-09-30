@@ -1,25 +1,11 @@
 #ifndef JS_JTAG_H__
 #define JS_JTAG_H__
 
-class JSJtagBreakpoint {
+class JSJtag {
 public:
-	/*
-	 * unsigned int address
-	 * unsigned int mask_pointer
-	 * bpType type
-	 * bool enabled
-	 * bool last
-	 * bool icestatus -> true if enable in actual device
-	 * bool toremove
-	 * bool toadd
-	 * uchar bpnum (ICE's breakpoint number)
-	 */
+	jtag     *origJtag;
 };
 
-class JSJtag {
-protected:
-	jtag     *origJtag;
-	JSObject *jsObject;
-};
+bool jsJtag_registerClass(JSContext *cx, JSObject *global);
 
 #endif /* JS_JTAG_H__ */

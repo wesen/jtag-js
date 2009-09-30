@@ -5,16 +5,19 @@
 #define XP_UNIX 1
 #include <js/jsapi.h>
 
+#define JS_REPORT_UNIMPLEMENTED() JS_ReportError(cx, "Feature not implemented yet")
+
 class JavaScript {
 protected:
 	JSRuntime *rt;
 	JSContext *cx;
 	JSObject *global;
-	JSObject *jtagObject;
 
 	static JSClass global_class;
 
 public:
+	JSObject *jtagObject;
+
 	JavaScript();
 	~JavaScript();
 
@@ -22,7 +25,6 @@ public:
 
 	bool init();
 	void eval(const std::string &str);
-	bool jsJtag_registerClass();
 };
 
 extern JavaScript *theJS;
