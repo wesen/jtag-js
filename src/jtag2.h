@@ -84,7 +84,7 @@ enum {
   BREAKPOINT2_FIRST_DATA = 2,
   BREAKPOINT2_DATA_MASK = 3,
 
-  MAX_TOTAL_BREAKPOINTS2 = 255
+  MAX_TOTAL_BREAKPOINTS2 = 32
 };
 
 struct breakpoint2
@@ -121,6 +121,10 @@ const struct breakpoint2 default_bp =
 
 class jtag2: public jtag
 {
+ public:
+    // Total breakpoints including software
+    breakpoint2 bp[MAX_TOTAL_BREAKPOINTS2];
+	
   private:
     unsigned short command_sequence;
     int devdescrlen;
@@ -129,8 +133,6 @@ class jtag2: public jtag
     bool useDebugWire;
     bool is_xmega;
 
-    // Total breakpoints including software
-    breakpoint2 bp[MAX_TOTAL_BREAKPOINTS2];
 
     unsigned char flashCache[MAX_FLASH_PAGE_SIZE];
     unsigned int flashCachePageAddr;

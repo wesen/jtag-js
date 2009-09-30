@@ -208,6 +208,11 @@ JSBool jsJtag_createJtag(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		
 		origJtag->initJtagBox();
 		origJtag->startPolling();
+
+		for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
+			JSObject *bpObj = jsBreakpoint_NewObject(cx, obj, privJtag, ((jtag2 *)origJtag)->bp + i);
+			privJtag->breakpoints[i] = bpObj;
+		}
 		
 		*rval = JSVAL_VOID;
 		return JS_TRUE;
@@ -424,8 +429,10 @@ JSBool jsJtag_getBreakpoints(JSContext *cx, JSObject *obj,
 
 	for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
 		JSObject *bpObj = privJtag->breakpoints[i];
+		printf("i: %d %p\n:", i, bpObj);
 		if (bpObj != NULL) {
 			JSBreakpoint *bp = (JSBreakpoint *)JS_GetInstancePrivate(cx, bpObj, &jsbreakpoint_class, NULL);
+			printf("i: %d %p %p\n:", i, bp, bp);
 			if (!bp)
 				continue;
 			breakpoint2 *origBp = bp->bp;
@@ -526,27 +533,31 @@ JSJtag *jsjtag_init(JSContext *cx, JSObject *obj) {
 /* JTAG properties */
 JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
 	JS_GET_PRIVATE_JTAG();
-	JS_JTAGICE_AVAILABLE_CHECK();
-	
+
 	jsint slot = JSVAL_TO_INT(idval);
 	switch (slot) {
 	case JSJTAG_DEVICENAME:
+		JS_JTAGICE_AVAILABLE_CHECK();
+	
 		*vp = STRING_TO_JSVAL(JS_NewString(cx, origJtag->device_name,
 																			 strlen(origJtag->device_name)));
 		return JS_TRUE;
 		break;
 
 	case JSJTAG_PROGRAMMING_ENABLED:
+		JS_JTAGICE_AVAILABLE_CHECK();
 		*vp = BOOLEAN_TO_JSVAL(origJtag->programmingEnabled);
 		return JS_TRUE;
 		break;
 
 	case JSJTAG_EVENTS:
+		JS_JTAGICE_AVAILABLE_CHECK();
 		JS_REPORT_UNIMPLEMENTED(); // XXX
 		return JS_FALSE;
 		break;
 
 	case JSJTAG_BREAKPOINTS:
+		JS_JTAGICE_AVAILABLE_CHECK();
 		JS_REPORT_UNIMPLEMENTED(); // XXX
 		return JS_FALSE;
 		break;
@@ -558,12 +569,12 @@ JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) 
 
 JSBool jsJtag_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
 	JS_GET_PRIVATE_JTAG();
-	JS_JTAGICE_AVAILABLE_CHECK();
 
 	jsint slot = JSVAL_TO_INT(idval);
 
 	switch (slot) {
 	case JSJTAG_EVENTS:
+		JS_JTAGICE_AVAILABLE_CHECK();
 			if (JSVAL_IS_STRING(*vp)) {
 				JSString *ustr = JSVAL_TO_STRING(idval);
 				char *str = JS_GetStringBytes(ustr);
