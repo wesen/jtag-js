@@ -14,6 +14,16 @@
    }                                                                          \
 }
 
+#define JS_REPORT_UNIMPLEMENTED() JS_ReportError(cx, "Feature not implemented yet")
+
+#define JS_GET_PRIVATE_JTAG()                                                 \
+	JSJtag *jtag = (JSJtag *)JS_GetInstancePrivate(cx, obj, &jtag_class, NULL); \
+	if (!jtag) {                                                                \
+	JS_ReportError(cx, "Could not get private jtag instance");						\
+	return JS_FALSE; \
+	}
+
+
 JSBool jsJtag_getProgramCounter(JSContext *cx, JSObject *obj, uintN argc,
 																jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
@@ -233,10 +243,10 @@ JSBool jsJtag_eraseProgramPage(JSContext *cx, JSObject *obj,
 
 JSBool jsJtag_downloadToTarget(JSContext *cx, JSObject *obj,
 															 uintN argc, jsval *argv, jsval *rval) {
-	// XXX
 	JSString *str;
 
   JS_JTAGICE_AVAILABLE_CHECK();
+	JS_REPORT_UNIMPLEMENTED(); // XXX
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
@@ -246,7 +256,7 @@ JSBool jsJtag_singleStep(JSContext *cx, JSObject *obj,
 												 uintN argc, jsval *argv, jsval *rval) {
   JS_JTAGICE_AVAILABLE_CHECK();
 
-	// XXX goes into eventLoop
+	JS_REPORT_UNIMPLEMENTED(); // XXX goes into eventloop
 
 	*rval = JSVAL_VOID;
 	return JS_TRUE;
@@ -380,64 +390,99 @@ static JSFunctionSpec jsjtag_functions[] = {
 	{ 0 }
 };
 
+enum jsjtag_propID {
+	JSJTAG_DEVICENAME = 1,
+	JSJTAG_EVENTS,
+	JSJTAG_PROGRAMMING_ENABLED,
+	JSJTAG_BREAKPOINTS
+};
+
+static JSPropertySpec jsjtag_props[] = {
+	{ "deviceName",         JSJTAG_DEVICENAME,          JSPROP_ENUMERATE | JSPROP_READONLY },
+	{ "programmingEnabled", JSJTAG_PROGRAMMING_ENABLED, JSPROP_ENUMERATE | JSPROP_READONLY },
+	{ "events",             JSJTAG_EVENTS,              JSPROP_ENUMERATE },
+	{ "breakpoints",        JSJTAG_BREAKPOINTS,         JSPROP_ENUMERATE | JSPROP_READONLY },
+	{ 0 }
+};
+
+JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp);
+JSBool jsJtag_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp);
+
+/* class definitions */
+JSClass jtag_class = {
+	"jtag", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, jsJtag_getProperty, jsJtag_setProperty,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
+	JSCLASS_NO_OPTIONAL_MEMBERS
+};
+
+
+typedef struct JSJTag {
+	/* store breakpoints here XXX */
+} JSJtag;
+
+JSJtag *jsjtag_init(JSContext *cx, JSObject *obj) {
+	JSJtag *jtag;
+	jtag = (JSJtag *)JS_malloc(cx, sizeof(*jtag));
+	if (!jtag) {
+		return NULL;
+	}
+	memset(jtag, 0, sizeof(*jtag));
+
+
+	if (!JS_SetPrivate(cx, obj, jtag)) {
+		JS_ReportError(cx, "Could not set private JTAG object");
+		JS_free(cx, jtag);
+		return NULL;
+	}
+
+	return jtag;
+}
+
 /* properties */
 JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
-	if (JSVAL_IS_STRING(idval)) {
-		JSString *ustr = JSVAL_TO_STRING(idval);
-		char *str = JS_GetStringBytes(ustr);
-		if (!strcmp(str, "deviceName")) {
-			if (!theJtagICE)
-				return JS_FALSE;
+	JS_GET_PRIVATE_JTAG();
 	
-			*vp = STRING_TO_JSVAL(JS_NewString(cx, theJtagICE->device_name,
-																				 strlen(theJtagICE->device_name)));
-			return JS_TRUE;
-		} else if (!strcmp(str, "programmingEnabled")) {
-			if (!theJtagICE)
-				return JS_FALSE;
-	
-			*vp = BOOLEAN_TO_JSVAL(theJtagICE->programmingEnabled);
-			return JS_TRUE;
-		} else if (!strcmp(str, "events")) {
-			if (!theJtagICE)
-				return JS_FALSE;
-	
-			//			if (JSVAL_IS_STRING(*vp)) {
-			//				JSString *ustr = JSVAL_TO_STRING(idval);
-			//				char *str = JS_GetStringBytes(ustr);
-			//				theJtagICE->parseEvents(str);
-			//			} else {
-			//				return JS_FALSE;
-			//			}
-		}
-
+	jsint slot = JSVAL_TO_INT(idval);
+	switch (slot) {
+	case JSJTAG_DEVICENAME:
+		JS_JTAGICE_AVAILABLE_CHECK();
+		*vp = STRING_TO_JSVAL(JS_NewString(cx, theJtagICE->device_name,
+																			 strlen(theJtagICE->device_name)));
 		return JS_TRUE;
-	} else {
+		break;
+
+	case JSJTAG_PROGRAMMING_ENABLED:
+		JS_JTAGICE_AVAILABLE_CHECK();
+		*vp = BOOLEAN_TO_JSVAL(theJtagICE->programmingEnabled);
+		return JS_TRUE;
+		break;
+
+	case JSJTAG_EVENTS:
+		JS_JTAGICE_AVAILABLE_CHECK();
+		JS_REPORT_UNIMPLEMENTED(); // XXX
+		return JS_FALSE;
+		break;
+
+	case JSJTAG_BREAKPOINTS:
+		JS_JTAGICE_AVAILABLE_CHECK();
+		JS_REPORT_UNIMPLEMENTED(); // XXX
+		return JS_FALSE;
+		break;
+
+	default:
 		return JS_TRUE;
 	}
 }
 
 JSBool jsJtag_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
-	if (JSVAL_IS_STRING(idval)) {
-		JSString *ustr = JSVAL_TO_STRING(idval);
-		char *str = JS_GetStringBytes(ustr);
-		if (!strcmp(str, "deviceName")) {
-			if (!theJtagICE)
-				return JS_FALSE;
-	
-			*vp = STRING_TO_JSVAL(JS_NewString(cx, theJtagICE->device_name,
-																				 strlen(theJtagICE->device_name)));
-			return JS_TRUE;
-		} else if (!strcmp(str, "programmingEnabled")) {
-			if (!theJtagICE)
-				return JS_FALSE;
-	
-			*vp = BOOLEAN_TO_JSVAL(theJtagICE->programmingEnabled);
-			return JS_TRUE;
-		} else if (!strcmp(str, "events")) {
-			if (!theJtagICE)
-				return JS_FALSE;
-	
+	JS_GET_PRIVATE_JTAG();
+
+	jsint slot = JSVAL_TO_INT(idval);
+
+	switch (slot) {
+	case JSJTAG_EVENTS:
+		JS_JTAGICE_AVAILABLE_CHECK();
 			if (JSVAL_IS_STRING(*vp)) {
 				JSString *ustr = JSVAL_TO_STRING(idval);
 				char *str = JS_GetStringBytes(ustr);
@@ -445,28 +490,34 @@ JSBool jsJtag_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) 
 			} else {
 				return JS_FALSE;
 			}
-		}
-
 		return JS_TRUE;
-	} else {
+		break;
+
+	default:
 		return JS_TRUE;
 	}
 }
 
 
-/* class definitions */
-JSClass JavaScript::jtag_class = {
-	"jtag", 0,
-	JS_PropertyStub, JS_PropertyStub, jsJtag_getProperty, jsJtag_setProperty,
-	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
-	JSCLASS_NO_OPTIONAL_MEMBERS
-};
-
 bool JavaScript::jsJtag_registerClass() {
-	jtagObject = JS_DefineObject(cx, global, "jtag", &jtag_class, NULL, JSPROP_ENUMERATE);
-	if (jtagObject == NULL)
+	JSObject *jtagClass = JS_InitClass(cx, global, NULL, &jtag_class,
+																		 NULL, 0, jsjtag_props, jsjtag_functions,
+																		 NULL, NULL);
+	if (!jtagClass) {
+		JS_ReportError(cx, "Could not initialize JTAG class");
 		return false;
-	if (!JS_DefineFunctions(cx, jtagObject, jsjtag_functions))
-	  return false;
+	}
+												 
+ 	jtagObject = JS_DefineObject(cx, global, "jtag", &jtag_class, NULL, JSPROP_ENUMERATE);
+	if (jtagObject == NULL) {
+		JS_ReportError(cx, "Could not create JTAG Object");
+		return false;
+	}
+	JSJtag *jtag = jsjtag_init(cx, jtagObject);
+	if (jtag == NULL) {
+		return false;
+	}
+	/* XXX define breakpoints property */
+	
 	return true;
 }

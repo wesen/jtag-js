@@ -13,7 +13,6 @@ protected:
 	JSObject *jtagObject;
 
 	static JSClass global_class;
-	static JSClass jtag_class;
 
 public:
 	JavaScript();
