@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "avarice.h"
 #include "jtag.h"
 #include "jtag2.h"
@@ -8,43 +10,63 @@
 #include "jsbreakpoint.hh"
 
 #define JS_GET_PRIVATE_BREAKPOINT()                                                 \
-	breakpoint2 *bp = (breakpoint2 *)JS_GetInstancePrivate(cx, obj, &jsbreakpoint_class, NULL); \
+	JSBreakpoint *bp = (JSBreakpoint *)JS_GetInstancePrivate(cx, obj, &jsbreakpoint_class, NULL); \
+	breakpoint2 *origBp = bp->bp; \
 	if (!bp) {                                                                \
 	JS_ReportError(cx, "Could not get private JTAG breakpoint instance");						\
 	return JS_FALSE; \
 	}
 
+#define JS_BREAKPOINT_AVAILABLE_CHECK() \
+		if (!origBp) {																							\
+      JS_ReportError(cx, "JTAG breakpoint not available yet, call jtag.init() first"); \
+      return JS_FALSE;																									\
+		}
 
 JSBool jsBreakpoint_update(JSContext *cx, JSObject *obj, uintN argc,
 													 jsval *argv, jsval *rval) {
+	JS_GET_PRIVATE_BREAKPOINT();
+	JS_BREAKPOINT_AVAILABLE_CHECK();
+	
 	JS_REPORT_UNIMPLEMENTED();
 	return JS_FALSE;
 }
 
 JSBool jsBreakpoint_enable(JSContext *cx, JSObject *obj, uintN argc,
 													 jsval *argv, jsval *rval) {
+	JS_GET_PRIVATE_BREAKPOINT();
+	JS_BREAKPOINT_AVAILABLE_CHECK();
+	
 	JS_REPORT_UNIMPLEMENTED();
 	return JS_FALSE;
 }
 
 JSBool jsBreakpoint_disable(JSContext *cx, JSObject *obj, uintN argc,
 													 jsval *argv, jsval *rval) {
+	JS_GET_PRIVATE_BREAKPOINT();
+	JS_BREAKPOINT_AVAILABLE_CHECK();
+	
 	JS_REPORT_UNIMPLEMENTED();
 	return JS_FALSE;
 }
 
 JSBool jsBreakpoint_add(JSContext *cx, JSObject *obj, uintN argc,
 													 jsval *argv, jsval *rval) {
+	JS_GET_PRIVATE_BREAKPOINT();
+	JS_BREAKPOINT_AVAILABLE_CHECK();
+	
 	JS_REPORT_UNIMPLEMENTED();
 	return JS_FALSE;
 }
 
 JSBool jsBreakpoint_delete(JSContext *cx, JSObject *obj, uintN argc,
 													 jsval *argv, jsval *rval) {
+	JS_GET_PRIVATE_BREAKPOINT();
+	JS_BREAKPOINT_AVAILABLE_CHECK();
+	
 	JS_REPORT_UNIMPLEMENTED();
 	return JS_FALSE;
 }
-
 
 /* breakpoint javascript native definitions */
 static JSFunctionSpec jsbreakpoint_functions[] = {
@@ -76,7 +98,7 @@ static JSPropertySpec jsbreakpoint_props[] = {
 JSBool jsBreakpoint_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp);
 JSBool jsBreakpoint_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp);
 
-static JSClass jsbreakpoint_class = {
+JSClass jsbreakpoint_class = {
 	"breakpoint", JSCLASS_HAS_PRIVATE,
 	JS_PropertyStub, JS_PropertyStub,
 	jsBreakpoint_getProperty, jsBreakpoint_setProperty,
@@ -86,14 +108,26 @@ static JSClass jsbreakpoint_class = {
 
 /* JTAG breakpoint definitions */
 
-JSObject *jsBreakpoint_NewObject(JSContext *cx, JSObject *global, breakpoint2 *bp) {
+JSObject *jsBreakpoint_NewObject(JSContext *cx, JSObject *global,
+																 JSJtag *theJtag, breakpoint2 *bp) {
 	JSObject *obj = JS_NewObject(cx, &jsbreakpoint_class, NULL, NULL);
 	if (!obj) {
 		JS_ReportError(cx, "Could not create JTAG breakpoint object");
 		return NULL;
 	}
-	if (!JS_SetPrivate(cx, obj, bp)) {
-		JS_ReportError(cx, "Could not set private breakpoint object");
+
+	JSBreakpoint *theBreakpoint;
+	theBreakpoint = (JSBreakpoint *)JS_malloc(cx, sizeof(*theBreakpoint));
+	if (!theBreakpoint) {
+		return NULL;
+	}
+	memset(theBreakpoint, 0, sizeof(*theBreakpoint));
+	theBreakpoint->jtag = theJtag;
+	theBreakpoint->bp = bp;
+
+	if (!JS_SetPrivate(cx, obj, theBreakpoint)) {
+		JS_ReportError(cx, "Could not set private JTAG breakpoint object");
+		JS_free(cx, theBreakpoint);
 		return NULL;
 	}
 
@@ -103,9 +137,35 @@ JSObject *jsBreakpoint_NewObject(JSContext *cx, JSObject *global, breakpoint2 *b
 /* JTAG breakpoint properties */
 JSBool jsBreakpoint_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
 	JS_GET_PRIVATE_BREAKPOINT();
+	JS_BREAKPOINT_AVAILABLE_CHECK();
 	
 	jsint slot = JSVAL_TO_INT(idval);
 	switch (slot) {
+	case JSBREAKPOINT_ADDRESS:
+		*vp = INT_TO_JSVAL((uint32_t)(origBp->address));
+		return JS_TRUE;
+		break;
+
+	case JSBREAKPOINT_MASK_POINTER:
+		*vp = INT_TO_JSVAL((uint32_t)(origBp->mask_pointer));
+		return JS_TRUE;
+		break;
+
+	case JSBREAKPOINT_TYPE:
+		*vp = INT_TO_JSVAL((uint32_t)(origBp->type));
+		return JS_TRUE;
+		break;
+
+	case JSBREAKPOINT_ENABLED:
+		*vp = BOOLEAN_TO_JSVAL(origBp->enabled);
+		return JS_TRUE;
+		break;
+
+	case JSBREAKPOINT_ICESTATUS:
+		*vp = BOOLEAN_TO_JSVAL(origBp->icestatus);
+		return JS_TRUE;
+		break;
+		
 	default:
 		return JS_TRUE;
 	}
@@ -113,9 +173,22 @@ JSBool jsBreakpoint_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval
 
 JSBool jsBreakpoint_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
 	JS_GET_PRIVATE_BREAKPOINT();
+	JS_BREAKPOINT_AVAILABLE_CHECK();
 	
 	jsint slot = JSVAL_TO_INT(idval);
 	switch (slot) {
+	case JSBREAKPOINT_ADDRESS:
+		return JS_TRUE;
+		break;
+
+	case JSBREAKPOINT_MASK_POINTER:
+		return JS_TRUE;
+		break;
+
+	case JSBREAKPOINT_TYPE:
+		return JS_TRUE;
+		break;
+
 	default:
 		return JS_TRUE;
 	}

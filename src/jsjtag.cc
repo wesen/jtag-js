@@ -25,7 +25,6 @@ extern JSClass jtag_class;
       return JS_FALSE;																									\
 		}
 
-
 JSBool jsJtag_getProgramCounter(JSContext *cx, JSObject *obj, uintN argc,
 																jsval *argv, jsval *rval) {
 	JS_GET_PRIVATE_JTAG();
@@ -173,6 +172,25 @@ JSBool jsJtag_initJtagOnChipDebugging(JSContext *cx, JSObject *obj,
 	return JS_TRUE;
 }
 
+void jsJtag_releaseNativeJtag(JSContext *cx, JSJtag *theJtag) {
+	if (theJtag->origJtag != NULL) {
+		delete theJtag->origJtag;
+
+		// clear breakpoints
+		for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
+			JSObject *bpObj = theJtag->breakpoints[i];
+			if (bpObj != NULL) {
+				JSBreakpoint *bp = (JSBreakpoint *)JS_GetInstancePrivate(cx, bpObj, &jsbreakpoint_class, NULL);
+				if (!bp)
+					continue;
+				bp->bp = NULL;
+			}
+		}
+
+		theJtag->origJtag = theJtagICE = NULL;
+	}
+}
+
 JSBool jsJtag_createJtag(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 	JS_GET_PRIVATE_JTAG();
 	
@@ -195,17 +213,11 @@ JSBool jsJtag_createJtag(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		return JS_TRUE;
 	} catch (const char *msg) {
 		JS_ReportError(cx, "Cannot initialize JTAG: %p, %s\n", theJtagICE, msg);
-		if (theJtagICE != NULL) {
-			delete theJtagICE;
-			privJtag->origJtag = origJtag = theJtagICE = NULL;
-		}
+		jsJtag_releaseNativeJtag(cx, privJtag);
 		return JS_FALSE;
 	} catch (...) {
 		JS_ReportError(cx, "Cannot initialize JTAG: Unknown error\n");
-		if (theJtagICE != NULL) {
-			delete theJtagICE;
-			privJtag->origJtag = origJtag = theJtagICE = NULL;
-		}
+		jsJtag_releaseNativeJtag(cx, privJtag);
 		return JS_FALSE;
 	}
 }
@@ -386,33 +398,79 @@ JSBool jsJtag_stopAt(JSContext *cx, JSObject *obj,
 	return JS_TRUE;
 }
 
+JSObject *jsJtag_getBreakpointForNativeBp(JSContext *cx, JSJtag *theJtag, breakpoint2 *origBp) {
+	for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
+		JSObject *bpObj = theJtag->breakpoints[i];
+		if (bpObj != NULL) {
+			JSBreakpoint *bp = (JSBreakpoint *)JS_GetInstancePrivate(cx, bpObj, &jsbreakpoint_class, NULL);
+			if (!bp)
+				continue;
+			if (bp->bp == origBp)
+				return bpObj;
+		}
+	}
+
+	return NULL;
+}
+
+JSBool jsJtag_getBreakpoints(JSContext *cx, JSObject *obj,
+														 uintN arg, jsval *argv, jsval *rval) {
+	JS_GET_PRIVATE_JTAG();
+  JS_JTAGICE_AVAILABLE_CHECK();
+
+	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
+	if (arr == NULL)
+    return JS_FALSE;
+
+	for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
+		JSObject *bpObj = privJtag->breakpoints[i];
+		if (bpObj != NULL) {
+			JSBreakpoint *bp = (JSBreakpoint *)JS_GetInstancePrivate(cx, bpObj, &jsbreakpoint_class, NULL);
+			if (!bp)
+				continue;
+			breakpoint2 *origBp = bp->bp;
+			if (!origBp)
+				continue;
+			if (origBp->last)
+				break;
+			jsval objVal = OBJECT_TO_JSVAL(bpObj);
+			JS_SetElement(cx, arr, i, &objVal);
+		}
+	}
+
+	*rval = OBJECT_TO_JSVAL(arr);
+	return JS_TRUE;
+}
+
 static JSFunctionSpec jsjtag_functions[] = {
-	{ "init", jsJtag_createJtag, 0, JSPROP_ENUMERATE, 0},
-	{ "connect", jsJtag_initJtagBox, 0, JSPROP_ENUMERATE, 0},
-	{ "initOnChipDebugging", jsJtag_initJtagOnChipDebugging, 0, JSPROP_ENUMERATE, 0},
+	{ "init",                  jsJtag_createJtag,              0, JSPROP_ENUMERATE, 0},
+	{ "connect",               jsJtag_initJtagBox,             0, JSPROP_ENUMERATE, 0},
+	{ "initOnChipDebugging",   jsJtag_initJtagOnChipDebugging, 0, JSPROP_ENUMERATE, 0},
 
-	{ "getPC", jsJtag_getProgramCounter, 0, JSPROP_ENUMERATE, 0},
-	{ "setPC", jsJtag_setProgramCounter, 1, JSPROP_ENUMERATE, 0},
-	{ "reset", jsJtag_resetProgram, 0, JSPROP_ENUMERATE, 0},
-	{ "interrupt", jsJtag_interruptProgram, 0, JSPROP_ENUMERATE, 0},
-	{ "resume", jsJtag_resumeProgram, 0, JSPROP_ENUMERATE, 0},
+	{ "getPC",                 jsJtag_getProgramCounter,       0, JSPROP_ENUMERATE, 0},
+	{ "setPC",                 jsJtag_setProgramCounter,       1, JSPROP_ENUMERATE, 0},
+	{ "reset",                 jsJtag_resetProgram,            0, JSPROP_ENUMERATE, 0},
+	{ "interrupt",             jsJtag_interruptProgram,        0, JSPROP_ENUMERATE, 0},
+	{ "resume",                jsJtag_resumeProgram,           0, JSPROP_ENUMERATE, 0},
 
-	{ "read", jsJtag_read, 2, JSPROP_ENUMERATE, 0},
-	{ "write", jsJtag_write, 2, JSPROP_ENUMERATE, 0},
+	{ "read",                  jsJtag_read,                    2, JSPROP_ENUMERATE, 0},
+	{ "write",                 jsJtag_write,                   2, JSPROP_ENUMERATE, 0},
 
-	{ "enableProgramming", jsJtag_enableProgramming, 0, JSPROP_ENUMERATE, 0},
-	{ "disableProgramming", jsJtag_disableProgramming, 0, JSPROP_ENUMERATE, 0},
-	{ "eraseProgramMemory", jsJtag_eraseProgramMemory, 0, JSPROP_ENUMERATE, 0},
-	{ "eraseProgramPage", jsJtag_eraseProgramPage, 1, JSPROP_ENUMERATE, 0},
-	{ "downloadToTarget", jsJtag_downloadToTarget, 3, JSPROP_ENUMERATE, 0},
+	{ "enableProgramming",     jsJtag_enableProgramming,       0, JSPROP_ENUMERATE, 0},
+	{ "disableProgramming",    jsJtag_disableProgramming,      0, JSPROP_ENUMERATE, 0},
+	{ "eraseProgramMemory",    jsJtag_eraseProgramMemory,      0, JSPROP_ENUMERATE, 0},
+	{ "eraseProgramPage",      jsJtag_eraseProgramPage,        1, JSPROP_ENUMERATE, 0},
+	{ "downloadToTarget",      jsJtag_downloadToTarget,        3, JSPROP_ENUMERATE, 0},
 
-	{ "deleteAllBreakpoints", jsJtag_deleteAllBreakpoints, 0, JSPROP_ENUMERATE, 0},
-	{ "deleteBreakpoint", jsJtag_deleteBreakpoint, 3, JSPROP_ENUMERATE, 0},
-	{ "addBreakpoint", jsJtag_addBreakpoint, 3, JSPROP_ENUMERATE, 0},
-	{ "updateBreakpoints", jsJtag_updateBreakpoints, 0, JSPROP_ENUMERATE, 0},
-	{ "codeBreakpointAt", jsJtag_codeBreakpointAt, 1, JSPROP_ENUMERATE, 0},
-	{ "codeBreakpointBetween", jsJtag_codeBreakpointBetween, 2, JSPROP_ENUMERATE, 0},
-	{ "stopAt", jsJtag_stopAt, 1, JSPROP_ENUMERATE, 0},
+	{ "deleteAllBreakpoints",  jsJtag_deleteAllBreakpoints,    0, JSPROP_ENUMERATE, 0},
+	{ "deleteBreakpoint",      jsJtag_deleteBreakpoint,        3, JSPROP_ENUMERATE, 0},
+	{ "addBreakpoint",         jsJtag_addBreakpoint,           3, JSPROP_ENUMERATE, 0},
+	{ "updateBreakpoints",     jsJtag_updateBreakpoints,       0, JSPROP_ENUMERATE, 0},
+	{ "codeBreakpointAt",      jsJtag_codeBreakpointAt,        1, JSPROP_ENUMERATE, 0},
+	{ "codeBreakpointBetween", jsJtag_codeBreakpointBetween,   2, JSPROP_ENUMERATE, 0},
+	{ "stopAt",                jsJtag_stopAt,                  1, JSPROP_ENUMERATE, 0},
+
+	{ "getBreakpoints",        jsJtag_getBreakpoints,          0, JSPROP_ENUMERATE, 0 },
 	{ 0 }
 };
 
@@ -427,7 +485,6 @@ static JSPropertySpec jsjtag_props[] = {
 	{ "deviceName",         JSJTAG_DEVICENAME,          JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ "programmingEnabled", JSJTAG_PROGRAMMING_ENABLED, JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ "events",             JSJTAG_EVENTS,              JSPROP_ENUMERATE },
-	{ "breakpoints",        JSJTAG_BREAKPOINTS,         JSPROP_ENUMERATE | JSPROP_READONLY },
 	{ 0 }
 };
 
@@ -445,13 +502,17 @@ JSClass jtag_class = {
 
 /* JTAG definitions */
 JSJtag *jsjtag_init(JSContext *cx, JSObject *obj) {
-	JSJtag *theJtag;
+	JSJtag *theJtag = new JSJtag();
 	theJtag = (JSJtag *)JS_malloc(cx, sizeof(*theJtag));
 	if (!theJtag) {
 		return NULL;
 	}
 	memset(theJtag, 0, sizeof(*theJtag));
 	theJtag->origJtag = NULL;
+
+	for (int i = 0; i < MAX_TOTAL_BREAKPOINTS2; i++) {
+		theJtag->breakpoints[i] = NULL;
+	}
 
 	if (!JS_SetPrivate(cx, obj, theJtag)) {
 		JS_ReportError(cx, "Could not set private JTAG object");
@@ -465,30 +526,27 @@ JSJtag *jsjtag_init(JSContext *cx, JSObject *obj) {
 /* JTAG properties */
 JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
 	JS_GET_PRIVATE_JTAG();
+	JS_JTAGICE_AVAILABLE_CHECK();
 	
 	jsint slot = JSVAL_TO_INT(idval);
 	switch (slot) {
 	case JSJTAG_DEVICENAME:
-		JS_JTAGICE_AVAILABLE_CHECK();
 		*vp = STRING_TO_JSVAL(JS_NewString(cx, origJtag->device_name,
 																			 strlen(origJtag->device_name)));
 		return JS_TRUE;
 		break;
 
 	case JSJTAG_PROGRAMMING_ENABLED:
-		JS_JTAGICE_AVAILABLE_CHECK();
 		*vp = BOOLEAN_TO_JSVAL(origJtag->programmingEnabled);
 		return JS_TRUE;
 		break;
 
 	case JSJTAG_EVENTS:
-		JS_JTAGICE_AVAILABLE_CHECK();
 		JS_REPORT_UNIMPLEMENTED(); // XXX
 		return JS_FALSE;
 		break;
 
 	case JSJTAG_BREAKPOINTS:
-		JS_JTAGICE_AVAILABLE_CHECK();
 		JS_REPORT_UNIMPLEMENTED(); // XXX
 		return JS_FALSE;
 		break;
@@ -500,12 +558,12 @@ JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) 
 
 JSBool jsJtag_setProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) {
 	JS_GET_PRIVATE_JTAG();
+	JS_JTAGICE_AVAILABLE_CHECK();
 
 	jsint slot = JSVAL_TO_INT(idval);
 
 	switch (slot) {
 	case JSJTAG_EVENTS:
-		JS_JTAGICE_AVAILABLE_CHECK();
 			if (JSVAL_IS_STRING(*vp)) {
 				JSString *ustr = JSVAL_TO_STRING(idval);
 				char *str = JS_GetStringBytes(ustr);
