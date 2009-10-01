@@ -1,12 +1,3 @@
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <termios.h>
-#include <fcntl.h>
-#include <string.h>
 #include <errno.h>
 
 #include "select.hh"
@@ -67,4 +58,8 @@ int FDSelect::waitWrite(unsigned long timeoutInMs, bool retry) {
 
 int FDSelect::waitReadWrite(unsigned long timeoutInMs, bool retry) {
 	return _select(&fds, &fds, timeoutInMs, retry);
+}
+
+bool FDSelect::isSet(int fd) {
+	return FD_ISSET(fd, &fds);
 }

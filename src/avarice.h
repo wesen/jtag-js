@@ -27,6 +27,7 @@
 #include "autoconf.h"
 
 #include "console.hh"
+#include "select.hh"
 #include "utils.hh"
 
 /** true if interrupts should be stepped over when stepping */

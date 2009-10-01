@@ -118,39 +118,24 @@ bool jtag2::resumeProgram(void)
     return true;
 }
 
+/* Check for input from JTAG ICE (breakpoint, sleep, info, power)
+ * or gdb (user break)
+ */
 bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
-	int maxfd;
-	fd_set readfds;
-
-	//	console->debugOut("Waiting for input.\n");
-
-	// Check for input from JTAG ICE (breakpoint, sleep, info, power)
-	// or gdb (user break)
-	FD_ZERO (&readfds);
-
-#if 0 // GDB CODE XXX
-	if (gdbFileDescriptor != -1)
-		FD_SET (gdbFileDescriptor, &readfds);
-#endif
-	  
-	FD_SET (jtagBox, &readfds);
-
-#if 0 // GDB CODE XXX
-	if (gdbFileDescriptor != -1)
-		maxfd = jtagBox > gdbFileDescriptor ? jtagBox : gdbFileDescriptor;
-	else
-#endif
-		maxfd = jtagBox;
-
-	struct timeval timeout = {
-		0,  10000 // 10 ms
-	};
+	FDSelect fds;
 	
-	int numfds = select(maxfd + 1, &readfds, 0, 0, &timeout);
+#if 0 // GDB CODE XXX
+	if (gdbFileDescriptor != -1)
+		fds.add(gdbFileDescriptor);
+#endif
+
+	fds.add(jtagBox);
+
+	int numfds = fds.waitRead(10); // 10 ms timeout
 	unixCheck(numfds, "GDB/JTAG ICE communications failure");
 
 #if 0 // GDB CODE XXX
-	if (gdbFileDescriptor != -1 && FD_ISSET(gdbFileDescriptor, &readfds))
+	if (gdbFileDescriptor != -1 && fds.isSet(gdbFileDescriptor))
 		{
 			int c = getDebugChar();
 			if (c == 3) // interrupt
@@ -163,8 +148,7 @@ bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
 		}
 #endif
 
-	if (FD_ISSET(jtagBox, &readfds))
-		{
+	if (fds.isSet(jtagBox)) {
 			uint8_t *evtbuf;
 			int evtSize;
 			unsigned short seqno;

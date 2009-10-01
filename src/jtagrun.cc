@@ -122,33 +122,29 @@ void jtag1::startPolling() {
 
 bool jtag1::pollDevice(bool *gdbInterrupt, bool *breakpoint) {
 #if 0 // GDB stuff
-	int maxfd;
-	fd_set readfds;
-
 	// Now that we are "going", wait for either a response from the JTAG
 	// box or a nudge from GDB.
-	debugOut("Waiting for input.\n");
+	console->debugOut("Waiting for input.\n");
 
 	// Check for input from JTAG ICE (breakpoint, sleep, info, power)
 	// or gdb (user break)
-	FD_ZERO (&readfds);
-	FD_SET (gdbFileDescriptor, &readfds);
-	FD_SET (jtagBox, &readfds);
-	maxfd = jtagBox > gdbFileDescriptor ? jtagBox : gdbFileDescriptor;
+	FDSelect fds;
+	fds.add(gdbFileDescriptor);
+	fds.add(jtagBox);
 
-	int numfds = select(maxfd + 1, &readfds, 0, 0, 0);
+	int numfds = fds.waitRead();
 	unixCheck(numfds, "GDB/JTAG ICE communications failure");
 
-	if (FD_ISSET(gdbFileDescriptor, &readfds))
+	if (fds.isSet(gdbFileDescriptor))
 	{
 	    int c = getDebugChar();
 	    if (c == 3) // interrupt
 	    {
-		debugOut("interrupted by GDB\n");
-		*gdbInterrupt = true;
+				console->debugOut("interrupted by GDB\n");
+				*gdbInterrupt = true;
 	    }
 	    else
-		debugOut("Unexpected GDB input `%02x'\n", c);
+				console->debugOut("Unexpected GDB input `%02x'\n", c);
 	}
 
 	// Read all extant responses (there's a small chance there could
@@ -175,31 +171,33 @@ bool jtag1::pollDevice(bool *gdbInterrupt, bool *breakpoint) {
 	    uint8_t buf[2];
 	    int count;
 
-	    debugOut("JTAG box sent %c", response);
+	    console->debugOut("JTAG box sent %c", response);
 	    switch (response)
 	    {
 	    case JTAG_R_BREAK:
-		count = timeout_read(buf, 2, JTAG_RESPONSE_TIMEOUT);
-		jtagCheck(count);
-		check(count == 2, JTAG_CAUSE);
-		*breakpoint = true;
-                debugOut(": Break Status Register = 0x%02x%02x\n",
+				count = timeout_read(buf, 2, JTAG_RESPONSE_TIMEOUT);
+				jtagCheck(count);
+				check(count == 2, JTAG_CAUSE);
+				*breakpoint = true;
+				console->debugOut(": Break Status Register = 0x%02x%02x\n",
                          buf[0], buf[1]);
 		break;
 	    case JTAG_R_INFO: case JTAG_R_SLEEP:
-		// we could do something here, esp. for info
-		count = timeout_read(buf, 2, JTAG_RESPONSE_TIMEOUT);
-		jtagCheck(count);
-		check(count == 2, JTAG_CAUSE);
-                debugOut(": 0x%02, 0x%02\n", buf[0], buf[1]);
-		break;
+				// we could do something here, esp. for info
+				count = timeout_read(buf, 2, JTAG_RESPONSE_TIMEOUT);
+				jtagCheck(count);
+				check(count == 2, JTAG_CAUSE);
+				console->debugOut(": 0x%02, 0x%02\n", buf[0], buf[1]);
+				break;
+				
 	    case JTAG_R_POWER:
-		// apparently no args?
-                debugOut("\n");
-		break;
+				// apparently no args?
+				console->debugOut("\n");
+				break;
+				
 	    default:
-		debugOut(": Unknown response\n");
-		break; 
+				console->debugOut(": Unknown response\n");
+				break; 
 	    }
 	}
 #endif

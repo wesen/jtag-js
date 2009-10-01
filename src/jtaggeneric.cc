@@ -87,36 +87,23 @@ int jtag::timeout_read(void *buf, size_t count, unsigned long timeout)
     char *buffer = (char *)buf;
     size_t actual = 0;
 
-    while (actual < count)
-    {
-	fd_set readfds;
-	FD_ZERO(&readfds);
-	FD_SET(jtagBox, &readfds);
+		FDSelect fds;
+		fds.add(jtagBox);
 
-	struct timeval tmout;
-	tmout.tv_sec = timeout / 1000000;
-	tmout.tv_usec = timeout % 1000000;
-
-	int selected = select(jtagBox + 1, &readfds, NULL, NULL, &tmout);
-        /* Even though select() is not supposed to set errno to EAGAIN
-           (according to the linux man page), it seems that errno can be set
-           to EAGAIN on some cygwin systems. Thus, we need to catch that
-           here. */
-        if ((selected < 0) && (errno == EAGAIN || errno == EINTR))
-            continue;
-	//jtagCheck(selected);
-
-	if (selected == 0)
-	    return actual;
-
-	ssize_t thisread = read(jtagBox, &buffer[actual], count - actual);
-        if ((thisread < 0) && (errno == EAGAIN))
-            continue;
-	jtagCheck(thisread);
-
-	actual += thisread;
+    while (actual < count) {
+			// retry the select call
+			int selected = fds.waitRead(timeout / 1000, true);
+			if (selected == 0)
+				return actual;
+			
+			ssize_t thisread = read(jtagBox, &buffer[actual], count - actual);
+			if ((thisread < 0) && (errno == EAGAIN))
+				continue;
+			jtagCheck(thisread);
+			
+			actual += thisread;
     }
-
+		
     return count;
 }
 

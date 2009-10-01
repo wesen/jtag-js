@@ -1,6 +1,11 @@
 #ifndef SELECT_H__
 #define SELECT_H__
 
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <fcntl.h>
+
 #import <list>
 
 class FDSelect {
@@ -24,6 +29,8 @@ public:
 	int waitRead(unsigned long timeoutInMs = INFINITE_TIMEOUT, bool retry = false);
 	int waitWrite(unsigned long timeoutInMs = INFINITE_TIMEOUT, bool retry = false);
 	int waitReadWrite(unsigned long timeoutInMs = INFINITE_TIMEOUT, bool retry = false);
+
+	bool isSet(int fd);
 };
 
 #endif /* SELECT_H__ */

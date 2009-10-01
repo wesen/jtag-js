@@ -74,14 +74,10 @@ void setGdbFile(int fd)
 
 static void waitForGdbOutput(void)
 {
-    int numfds;
-    fd_set writefds;
-
-    FD_ZERO (&writefds);
-    FD_SET (gdbFileDescriptor, &writefds);
-
-    numfds = select (gdbFileDescriptor + 1, 0, &writefds, 0, 0);
-    gdbCheck(numfds);
+	FDSelect fds;
+	fds.add(gdbFileDescriptor);
+	int numfds = fds.waitWrite();
+	gdbCheck(numfds);
 }
 
 /** Send single char to gdb. Abort in case of problem. **/
@@ -108,14 +104,10 @@ static void putDebugChar(char c)
 
 static void waitForGdbInput(void)
 {
-    int numfds;
-    fd_set readfds;
-
-    FD_ZERO (&readfds);
-    FD_SET (gdbFileDescriptor, &readfds);
-
-    numfds = select (gdbFileDescriptor + 1, &readfds, 0, 0, 0);
-    gdbCheck(numfds);
+	FDSelect fds;
+	fds.add(gdbFileDescriptor);
+	int numfds = fds.waitRead();
+	gdbCheck(numfds);
 }
 
 /** Return single char read from gdb. Abort in case of problem,
