@@ -55,23 +55,23 @@ static int makeSocket(struct sockaddr_in *name, unsigned short int port)
 	struct protoent *protoent;
 
 	sock = socket(PF_INET, SOCK_STREAM, 0);
-	gdbCheck(sock);
+	gdbRemote.check(sock);
 
 	// Allow rapid reuse of this port.
 	tmp = 1;
-	gdbCheck(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&tmp, sizeof(tmp)));
+	gdbRemote.check(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&tmp, sizeof(tmp)));
 
 	// Enable TCP keep alive process.
 	tmp = 1;
-	gdbCheck(setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&tmp, sizeof(tmp)));
+	gdbRemote.check(setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&tmp, sizeof(tmp)));
 
-	gdbCheck(bind(sock, (struct sockaddr *)name, sizeof(*name)));
+	gdbRemote.check(bind(sock, (struct sockaddr *)name, sizeof(*name)));
 
 	protoent = getprotobyname("tcp");
 	check(protoent != NULL, "tcp protocol unknown (oops?)");
 
 	tmp = 1;
-	gdbCheck(setsockopt(sock, protoent->p_proto, TCP_NODELAY,
+	gdbRemote.check(setsockopt(sock, protoent->p_proto, TCP_NODELAY,
 											(char *)&tmp, sizeof(tmp)));
 
 	return sock;
@@ -654,7 +654,7 @@ int main(int argc, char **argv)
 			initSocketAddress(&name, hostName, hostPortNumber);
 			sock = makeSocket(&name, hostPortNumber);
 			console->statusOut("Waiting for connection on port %hu.\n", hostPortNumber);
-			gdbCheck(listen(sock, 1));
+			gdbRemote.check(listen(sock, 1));
 
 			if (detach)
         {
@@ -670,17 +670,18 @@ int main(int argc, char **argv)
 			// Connection request on original socket.
 			socklen_t size = (socklen_t)sizeof(clientname);
 			int gfd = accept(sock, (struct sockaddr *)&clientname, &size);
-			gdbCheck(gfd);
+			gdbRemote.check(gfd);
 			console->statusOut("Connection opened by host %s, port %hu.\n",
 								inet_ntoa(clientname.sin_addr), ntohs(clientname.sin_port));
 
-			setGdbFile(gfd);
+			gdbRemote.setFile(gfd);
 
 			// Now do the actual processing of GDB messages
 			// We stay here until exiting because of error of EOF on the
 			// gdb connection
-			for (;;)
-				talkToGdb();
+			for (;;) {
+				gdbRemote.talkToGdb();
+			}
     }
 
 	delete theJtagICE;
