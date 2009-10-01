@@ -36,98 +36,7 @@
 
 #include "avarice.h"
 #include "jtag.h"
-
-const char *BFDmemoryTypeString[] = {
-    "FLASH",
-    "EEPROM",
-    "RAM",
-};
-
-const int BFDmemorySpaceOffset[] = {
-    FLASH_SPACE_ADDR_OFFSET,
-    EEPROM_SPACE_ADDR_OFFSET,
-    DATA_SPACE_ADDR_OFFSET,
-};
-
-/*
- * Debugging helper functions applicable to both the mkI and mkII ICE.
- */
-static codeToString_t jtagCmd2String[] = {
-  { CMND_ENTER_PROGMODE, "CMND_ENTER_PROGMODE" },
-  { CMND_CHIP_ERASE, "CMND_CHIP_ERASE" },
-  { CMND_CLEAR_EVENTS, "CMND_CLEAR_EVENTS" },
-  { CMND_CLR_BREAK, "CMND_CLR_BREAK" },
-  { CMND_ENTER_PROGMODE, "CMND_ENTER_PROGMODE" },
-  { CMND_ERASEPAGE_SPM, "CMND_ERASEPAGE_SPM" },
-  { CMND_FORCED_STOP, "CMND_FORCED_STOP" },
-  { CMND_GET_BREAK, "CMND_GET_BREAK" },
-  { CMND_GET_PARAMETER, "CMND_GET_PARAMETER" },
-  { CMND_GET_SIGN_ON, "CMND_GET_SIGN_ON" },
-  { CMND_GET_SYNC, "CMND_GET_SYNC" },
-  { CMND_GO, "CMND_GO" },
-  { CMND_LEAVE_PROGMODE, "CMND_LEAVE_PROGMODE" },
-  { CMND_READ_MEMORY, "CMND_READ_MEMORY" },
-  { CMND_READ_PC, "CMND_READ_PC" },
-  { CMND_RESET, "CMND_RESET" },
-  { CMND_RESTORE_TARGET, "CMND_RESTORE_TARGET" },
-  { CMND_RUN_TO_ADDR, "CMND_RUN_TO_ADDR" },
-  { CMND_SELFTEST, "CMND_SELFTEST" },
-  { CMND_SET_BREAK, "CMND_SET_BREAK" },
-  { CMND_SET_DEVICE_DESCRIPTOR, "CMND_SET_DEVICE_DESCRIPTOR" },
-  { CMND_SET_N_PARAMETERS, "CMND_SET_N_PARAMETERS" },
-  { CMND_SET_PARAMETER, "CMND_SET_PARAMETER" },
-  { CMND_SIGN_OFF, "CMND_SIGN_OFF" },
-  { CMND_SINGLE_STEP, "CMND_SINGLE_STEP" },
-  { CMND_SPI_CMD, "CMND_SPI_CMD" },
-  { CMND_WRITE_MEMORY, "CMND_WRITE_MEMORY" },
-  { CMND_WRITE_PC, "CMND_WRITE_PC" },
-};
-
-static codeToString_t jtagRsp2String[] = {
-    { RSP_DEBUGWIRE_SYNC_FAILED, "RSP_DEBUGWIRE_SYNC_FAILED" },
-    { RSP_FAILED, "RSP_FAILED" },
-    { RSP_GET_BREAK, "RSP_GET_BREAK" },
-    { RSP_ILLEGAL_BREAKPOINT, "RSP_ILLEGAL_BREAKPOINT" },
-    { RSP_ILLEGAL_COMMAND, "RSP_ILLEGAL_COMMAND" },
-    { RSP_ILLEGAL_EMULATOR_MODE, "RSP_ILLEGAL_EMULATOR_MODE" },
-    { RSP_ILLEGAL_JTAG_ID, "RSP_ILLEGAL_JTAG_ID" },
-    { RSP_ILLEGAL_MCU_STATE, "RSP_ILLEGAL_MCU_STATE" },
-    { RSP_ILLEGAL_MEMORY_TYPE, "RSP_ILLEGAL_MEMORY_TYPE" },
-    { RSP_ILLEGAL_MEMORY_RANGE, "RSP_ILLEGAL_MEMORY_RANGE" },
-    { RSP_ILLEGAL_PARAMETER, "RSP_ILLEGAL_PARAMETER" },
-    { RSP_ILLEGAL_POWER_STATE, "RSP_ILLEGAL_POWER_STATE" },
-    { RSP_ILLEGAL_VALUE, "RSP_ILLEGAL_VALUE" },
-    { RSP_MEMORY, "RSP_MEMORY" },
-    { RSP_NO_TARGET_POWER, "RSP_NO_TARGET_POWER" },
-    { RSP_OK, "RSP_OK" },
-    { RSP_PARAMETER, "RSP_PARAMETER" },
-    { RSP_PC, "RSP_PC" },
-    { RSP_SELFTEST, "RSP_SELFTEST" },
-    { RSP_SET_N_PARAMETERS, "RSP_SET_N_PARAMETERS" },
-    { RSP_SIGN_ON, "RSP_SIGN_ON" },
-    { RSP_SPI_DATA, "RSP_SPI_DATA" },
-  
-};
-
-const char *jtag::codeToString(uint8_t code, codeToString_t *arr,
-			       int max, const char *defaultName) {
-  for (int i = 0; i < max; i++) {
-    if (arr[i].code == code) {
-      return arr[i].name;
-    }
-  }
-
-  return defaultName;
-}
-
-const char *jtag::jtagCmdToString(uint8_t command) {
-  return codeToString(command, jtagCmd2String, countof(jtagCmd2String), "CMND_UNKNOWN");
-}
-
-const char *jtag::jtagRspToString(uint8_t rsp) {
-  return codeToString(rsp, jtagRsp2String, countof(jtagRsp2String), "RSP_UNKNOWN");
-}
-  
+ 
 
 /*
  * Generic functions applicable to both, the mkI and mkII ICE.
@@ -136,12 +45,6 @@ const char *jtag::jtagRspToString(uint8_t rsp) {
 void jtag::jtagCheck(int status)
 {
     unixCheck(status, JTAG_CAUSE, NULL);
-}
-
-void jtag::restoreSerialPort()
-{
-  if (!is_usb && jtagBox >= 0 && oldtioValid)
-      tcsetattr(jtagBox, TCSANOW, &oldtio);
 }
 
 jtag::jtag(void)
@@ -154,62 +57,23 @@ jtag::jtag(void)
 
 jtag::jtag(const char *jtagDeviceName, char *name, emulator type)
 {
-    struct termios newtio;
-
     jtagBox = 0;
     oldtioValid = is_usb = false;
     ctrlPipe = -1;
     device_name = name;
     emu_type = type;
-    if (strncmp(jtagDeviceName, "usb", 3) == 0)
-      {
+
+    if (strncmp(jtagDeviceName, "usb", 3) == 0) {
 #ifdef HAVE_LIBUSB
-	is_usb = true;
-	openUSB(jtagDeviceName);
+			is_usb = true;
+			openUSB(jtagDeviceName);
 #else
-	throw "avarice has not been compiled with libusb support\n";
+			throw "avarice has not been compiled with libusb support\n";
 #endif
-      }
-    else
-      {
-	// Open modem device for reading and writing and not as controlling
-	// tty because we don't want to get killed if linenoise sends
-	// CTRL-C.
-	jtagBox = open(jtagDeviceName, O_RDWR | O_NOCTTY | O_NONBLOCK);
-	unixCheck(jtagBox, "Failed to open %s", jtagDeviceName);
-
-	// save current serial port settings and plan to restore them on exit
-	jtagCheck(tcgetattr(jtagBox, &oldtio));
-	oldtioValid = true;
-
-	memset(&newtio, 0, sizeof(newtio));
-	newtio.c_cflag = CS8 | CLOCAL | CREAD;
-
-	// set baud rates in a platform-independent manner
-	jtagCheck(cfsetospeed(&newtio, B19200));
-	jtagCheck(cfsetispeed(&newtio, B19200));
-
-	// IGNPAR  : ignore bytes with parity errors
-	//           otherwise make device raw (no other input processing)
-	newtio.c_iflag = IGNPAR;
-
-	// Raw output.
-	newtio.c_oflag = 0;
-
-	// Raw input.
-	newtio.c_lflag = 0;
-
-	// The following configuration should cause read to return if 2
-	// characters are immediately avaible or if the period between
-	// characters exceeds 5 * .1 seconds.
-	newtio.c_cc[VTIME]    = 5;     // inter-character timer unused
-	newtio.c_cc[VMIN]     = 255;   // blocking read until VMIN character
-	// arrives
-
-	// now clean the serial line and activate the settings for the port
-	jtagCheck(tcflush(jtagBox, TCIFLUSH));
-	jtagCheck(tcsetattr(jtagBox,TCSANOW,&newtio));
-      }
+		} else {
+			openSerialPort(jtagDeviceName);
+		}
+			 
 }
 
 // NB: the destructor is virtual; class jtag2 extends it
@@ -217,7 +81,6 @@ jtag::~jtag(void)
 {
   restoreSerialPort();
 }
-
 
 int jtag::timeout_read(void *buf, size_t count, unsigned long timeout)
 {
@@ -284,76 +147,6 @@ int jtag::safewrite(const void *b, int count)
   return actual;
 }
 
-/** Change bitrate of PC's serial port as specified by BIT_RATE_xxx in
-    'newBitRate' **/
-void jtag::changeLocalBitRate(int newBitRate)
-{
-    if (is_usb)
-        return;
-
-    // Change the local port bitrate.
-    struct termios tio;
-
-    jtagCheck(tcgetattr(jtagBox, &tio));
-
-    speed_t newPortSpeed = B19200;
-    // Linux doesn't support 14400. Let's hope it doesn't end up there...
-    switch(newBitRate)
-    {
-    case 9600:
-	newPortSpeed = B9600;
-	break;
-    case 19200:
-	newPortSpeed = B19200;
-	break;
-    case 38400:
-	newPortSpeed = B38400;
-	break;
-    case 57600:
-	newPortSpeed = B57600;
-	break;
-    case 115200:
-	newPortSpeed = B115200;
-	break;
-    default:
-	console->debugOut("unsupported bitrate: %d\n", newBitRate);
-	exit(1);
-    }
-
-    cfsetospeed(&tio, newPortSpeed);
-    cfsetispeed(&tio, newPortSpeed);
-
-    jtagCheck(tcsetattr(jtagBox,TCSANOW,&tio));
-    jtagCheck(tcflush(jtagBox, TCIFLUSH));
-}
-
-static bool pageIsEmpty(BFDimage *image, unsigned int addr, unsigned int size,
-                        BFDmemoryType memtype)
-{
-    bool emptyPage = true;
-
-    // Check if page is used
-    for (unsigned int idx=addr; idx<addr+size; idx++)
-    {
-        if (idx >= image->last_address)
-            break;
-
-        // 1. If this address existed in input file, mark as ! empty.
-        // 2. If we are programming FLASH, and contents == 0xff, we need
-        //    not program (is 0xff after erase).
-        if (image->image[idx].used)
-        {
-            if (!((memtype == MEM_FLASH) &&
-                  (image->image[idx].val == 0xff)))
-            {
-                emptyPage = false;
-                break;
-            }
-        }
-    }
-    return emptyPage;
-}
-
 
 unsigned int jtag::get_page_size(BFDmemoryType memtype)
 {
@@ -370,6 +163,34 @@ unsigned int jtag::get_page_size(BFDmemoryType memtype)
         break;
     }
     return page_size;
+}
+
+
+static bool pageIsEmpty(BFDimage *image, unsigned int addr, unsigned int size,
+                        BFDmemoryType memtype)
+{
+	bool emptyPage = true;
+
+	// Check if page is used
+	for (unsigned int idx=addr; idx<addr+size; idx++)
+    {
+			if (idx >= image->last_address)
+				break;
+
+			// 1. If this address existed in input file, mark as ! empty.
+			// 2. If we are programming FLASH, and contents == 0xff, we need
+			//    not program (is 0xff after erase).
+			if (image->image[idx].used)
+        {
+					if (!((memtype == MEM_FLASH) &&
+								(image->image[idx].val == 0xff)))
+            {
+							emptyPage = false;
+							break;
+            }
+        }
+    }
+	return emptyPage;
 }
 
 

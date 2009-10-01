@@ -163,6 +163,8 @@ class jtag2: public jtag
     };
     virtual ~jtag2(void);
 
+    virtual bool isMk2() { return true; }
+
     virtual void initJtagBox(void);
     virtual void initJtagOnChipDebugging(unsigned long bitrate);
 
@@ -254,8 +256,8 @@ class jtag2: public jtag
      **/
     bool eventLoop(void);
 
-		virtual void startPolling();
-		virtual bool pollDevice(bool *gdbInterrupt, bool *breakpoint);
+    virtual void startPolling();
+    virtual bool pollDevice(bool *gdbInterrupt, bool *breakpoint);
 };
 
 #endif

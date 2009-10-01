@@ -31,8 +31,12 @@ avarice_SOURCES =	\
 	ioreg.cc	\
 	ioreg.h		\
 	jtag.h		\
+	jtag_constants.h \
+	jtag_device_desc.h \
+	jtag_constants.cc \
 	jtag1.h		\
 	jtag2.h		\
+	jtagserial.cc   \
 	jtag2bp.cc	\
 	jtag2io.cc	\
 	jtag2misc.cc	\
@@ -55,6 +59,9 @@ avarice_SOURCES =	\
 	gnu_getopt.c    \
 	gnu_getopt.h    \
 	gnu_getopt1.c   \
+			\
+	select.cc       \
+	select.hh       \
 	console.cc      \
 	console.hh
 
@@ -67,6 +74,10 @@ manuel_SOURCES =	\
 	jtag.h		\
 	jtag1.h		\
 	jtag2.h		\
+	jtag_constants.h \
+	jtag_device_desc.h \
+	jtag_constants.cc \
+	jtagserial.cc   \
 	jtag2bp.cc	\
 	jtag2io.cc	\
 	jtag2misc.cc	\
@@ -84,6 +95,8 @@ manuel_SOURCES =	\
 	jtagrw.cc	\
 	main2.cc	\
 	utils.cc        \
+	select.cc       \
+	select.hh       \
 	console.cc      \
 	console.hh\
 	terminal-io.cc \

@@ -63,10 +63,9 @@ typedef struct {
     const char *name;
 } BFDimage;
 
-/**
- * Struct to convert specific bytes received on jtag to a more readable string
- * to help while debugging.
- */
+// Struct to convert specific bytes received on jtag to a more readable string
+// to help while debugging.
+//
 typedef struct codeToString_s {
   unsigned char code;
   const char *name;
@@ -107,6 +106,8 @@ class jtag
   // is written, apparently)
   bool programmingEnabled;
 
+  virtual bool isMk2() { return false; }
+
   // Name of the device controlled by the JTAG ICE
   char *device_name;
 
@@ -120,6 +121,7 @@ class jtag
 
   protected:
   pid_t openUSB(const char *jtagDeviceName);
+  void openSerialPort(const char *portName);
   int safewrite(const void *b, int count);
   void changeLocalBitRate(int newBitRate);
   void restoreSerialPort(void);

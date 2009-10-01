@@ -156,8 +156,8 @@ class jtag1: public jtag
     /** Return value of JTAG ICE parameter 'item' **/
     uint8_t getJtagParameter(uint8_t item);
 
-		virtual bool pollDevice(bool *gdbInterrupt, bool *breakpoint);
-		virtual void startPolling();
+    virtual bool pollDevice(bool *gdbInterrupt, bool *breakpoint);
+    virtual void startPolling();
 };
 
 #endif
