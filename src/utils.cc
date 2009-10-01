@@ -201,7 +201,7 @@ static void check_1(bool printUnixError, const char *fmt, va_list args)
 			console->statusOut("\n");
 		}
 
-#if 0 // GDB CODE XXX
+#ifdef GDB_FUNCTIONALITY_XXX
     console->vgdbOut(fmt, args);
     if (printUnixError)
 			gdbOut(": %s", strerror(en));

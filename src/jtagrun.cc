@@ -121,7 +121,7 @@ void jtag1::startPolling() {
 }
 
 bool jtag1::pollDevice(bool *gdbInterrupt, bool *breakpoint) {
-#if 0 // GDB stuff
+#ifdef GDB_FUNCTIONALITY_XXX
 	// Now that we are "going", wait for either a response from the JTAG
 	// box or a nudge from GDB.
 	console->debugOut("Waiting for input.\n");
@@ -207,8 +207,8 @@ bool jtag1::jtagContinue(void)
 {
 	bool breakpoint = false, gdbInterrupt = false;
 
-#if 0
-    updateBreakpoints();        // download new bp configuration
+#ifdef GDB_FUNCTIONALITY_XXX
+	updateBreakpoints();        // download new bp configuration
 
     if (!doSimpleJtagCommand('G', 0))
     {

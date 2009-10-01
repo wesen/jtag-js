@@ -124,7 +124,7 @@ bool jtag2::resumeProgram(void)
 bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
 	FDSelect fds;
 	
-#if 0 // GDB CODE XXX
+#ifdef GDB_FUNCTIONALITY_XXX
 	if (gdbFileDescriptor != -1)
 		fds.add(gdbFileDescriptor);
 #endif
@@ -134,7 +134,7 @@ bool jtag2::pollDevice(bool *breakpoint, bool *gdbInterrupt) {
 	int numfds = fds.waitRead(10); // 10 ms timeout
 	unixCheck(numfds, "GDB/JTAG ICE communications failure");
 
-#if 0 // GDB CODE XXX
+#ifdef GDB_FUNCTIONALITY_XXX
 	if (gdbFileDescriptor != -1 && fds.isSet(gdbFileDescriptor))
 		{
 			int c = getDebugChar();
