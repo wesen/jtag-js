@@ -69,6 +69,7 @@ AC_CHECK_LIB([usb], [usb_get_string_simple])
 AC_CHECK_LIB([readline], [readline])
 AC_CHECK_LIB([js], [JS_NewContext])
 AC_CHECK_LIB([elf], [elf_begin])
+AC_CHECK_LIB([dwarf], [dwarf_finish])
 
 sinclude(acx_pthread.m4)
 THREADLIBS=""

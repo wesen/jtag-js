@@ -31,10 +31,11 @@ int main(int argc, char *argv[]) {
 
 	myJS.init();
 
+	terminal.go();
+
 	for (int i = 1; i < argc; i++) {
 		myJS.load(argv[i]);
 	}
-	terminal.go();
 	
 	for (;;) {
 		bool interrupt = false;

@@ -16,6 +16,12 @@
 // #define DWARF_UNIMPLEMENTED() throw DwarfException()
 #define DWARF_UNIMPLEMENTED(name) throw (name ": unimplemented")
 
+#define DWARF_CHECK_FULL(res, str, file, line)																		\
+	if ((res) == DW_DLV_ERROR) throw (str ": got dwarf error in file " file \
+																		" at line ")
+
+#define DWARF_CHECK(res, str) DWARF_CHECK_FULL(res, str, __FILE__, __LINE__)
+
 DwarfFile::DwarfFile(const char *_filename) : filename(_filename) {
 }
 
@@ -104,12 +110,55 @@ jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die die) {
 
 /* dwarf compilation unit */
 jsval DwarfFile::dwarfCu(Dwarf_Die cu_die) {
-	DWARF_UNIMPLEMENTED("dwarfCu");
+	//	DWARF_UNIMPLEMENTED("dwarfCu");
+	return JSVAL_VOID;
 }
 
 /* single dwarf section */
 jsval DwarfFile::dwarfElfHeader(Elf *elf) {
-	DWARF_UNIMPLEMENTED("dwarfElfHeader");
+	int res = dwarf_elf_init(elf, DW_DLC_READ, NULL, NULL, &dbg, &error);
+	DWARF_CHECK(res, "dwarf_elf_init");
+
+	jsval ret = JSVAL_VOID;
+	for (int cu_number = 0; ; cu_number++) {
+		Dwarf_Die no_die = 0;
+		Dwarf_Die cu_die = 0;
+
+		Dwarf_Unsigned cu_header_length;
+		Dwarf_Half version_stamp;
+		Dwarf_Unsigned abbrev_offset;
+		Dwarf_Half address_size;
+		Dwarf_Unsigned next_cu_header;
+
+		int res = dwarf_next_cu_header(dbg, &cu_header_length,
+																	 &version_stamp, &abbrev_offset, &address_size,
+																	 &next_cu_header, &error);
+		DWARF_CHECK(res, "dwarf_next_cu_header");
+		if (res == DW_DLV_NO_ENTRY) {
+			break;
+		}
+
+		res = dwarf_siblingof(dbg, no_die, &cu_die, &error);
+		DWARF_CHECK(res, "dwarf_siblingof");
+
+		if (res == DW_DLV_NO_ENTRY) {
+			continue;
+		}
+
+		try {
+			jsval val = dwarfCu(cu_die);
+		} catch (...) {
+			dwarf_dealloc(dbg, cu_die, DW_DLA_DIE);
+			throw;
+		}
+
+		dwarf_dealloc(dbg, cu_die, DW_DLA_DIE);
+	}
+	
+	res = dwarf_finish(dbg, &error);
+	DWARF_CHECK(res, "dwarf_finish");
+
+	return ret;
 }
 
 /* whole dwarf file */

@@ -14,4 +14,4 @@ configure
 doc/Makefile.in
 scripts/Makefile.in
 scripts/ice-gdb
-
+*.stackdump
