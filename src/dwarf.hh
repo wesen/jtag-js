@@ -29,6 +29,7 @@ protected:
 	Dwarf_Die die;
 	JSContext *cx;
 	JSObject *obj;
+	JSObject *attrObj;
 
 	std::string filename;
 	

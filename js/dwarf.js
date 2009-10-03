@@ -10,7 +10,7 @@ Dwarf = {
   },
   
   attributeAsString : function(attribute) {
-    var res = "[" + attribute.name + " (o:" + attribute.offset + ") ]: ";
+    var res = "[" + attribute.name + " " + attribute.num + " (o:" + attribute.offset + ") ]: ";
     var valString = (attribute.value ? (this.valueAsString(attribute.value.formName,
                                                            attribute.value.value) +
                                         " (" + attribute.value.formName + ", " +

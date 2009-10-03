@@ -5,3 +5,5 @@ function test() {
   var file = readElf("test.avr.elf");
   print(Dwarf.fileAsString(file));
 }
+
+file = readElf("test.avr.elf");

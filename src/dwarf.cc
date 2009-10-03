@@ -27,7 +27,6 @@
 						" at line " TOSTRING(__LINE___)); \
 	}
 
-
 DwarfFile::DwarfFile(JSContext *_cx, JSObject *_obj, const char *_filename) :
 	cx(_cx), obj(_obj), filename(_filename) {
 }
@@ -38,7 +37,14 @@ DwarfFile::~DwarfFile() {
 jsval DwarfFile::getSmallEncodingIntegerName(Dwarf_Attribute attr,
 																						 const char *attr_name,
 																						 encoding_type_func val_as_string) {
-	return JSVAL_VOID;
+	JSObject *attrValueObj = JS_NewObject(cx, NULL, NULL, NULL);
+	jsval attrValueVal = OBJECT_TO_JSVAL(attrValueObj);
+
+	Dwarf_Unsigned uval;
+	int res = dwarf_formudata(attr, &uval, &error);
+  DWARF_CHECK(res, "dwarf_formudata");
+	const char *val = val_as_string(uval);
+	return JS_NEW_STRING_VAL(val);
 }
 
 jsval DwarfFile::dwarfLocationList(Dwarf_Attribute attr) {
@@ -67,19 +73,16 @@ jsval DwarfFile::dwarfOpBreg(Dwarf_Unsigned opd1, Dwarf_Unsigned opd2) {
 
 /* dwarf attribute */
 jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribute attr) {
-	JSObject *attrObj = JS_NewObject(cx, NULL, NULL, NULL);
-	jsval parentVal = OBJECT_TO_JSVAL(parent);
-	JS_SetProperty(cx, attrObj, "parent", &parentVal);
+	attrObj = JS_NewObject(cx, NULL, NULL, NULL);
+	JS_SET_PROPERTY_OBJECT(attrObj, "parent", attrObj);
 	
 	Dwarf_Half attrNum;
 	int res = dwarf_whatattr(attr, &attrNum, &error);
 	DWARF_CHECK(res, "dwarf_whatattr");
-	jsval attrNumVal = INT_TO_JSVAL(attrNum);
-	JS_SetProperty(cx, attrObj, "num", &attrNumVal);
+	JS_SET_PROPERTY_INT(attrObj, "num", attrNum);
 
 	const char *atname = get_AT_name(attrNum);
-	jsval atnameVal = JS_NEW_STRING_VAL(atname);
-	JS_SetProperty(cx, attrObj, "name", &atnameVal);
+	JS_SET_PROPERTY_STRING(attrObj, "name", atname);
 
 	jsval valVal = dwarfAttributeValue(attr);
 	JS_SetProperty(cx, attrObj, "value", &valVal);
@@ -87,8 +90,7 @@ jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribut
 	Dwarf_Off off;
 	res = dwarf_attr_offset(die, attr, &off, &error);
 	DWARF_CHECK(res, "dwarf_attr_offset");
-	jsval attrOffVal = INT_TO_JSVAL(off);
-	JS_SetProperty(cx, attrObj, "offset", &attrOffVal);
+	JS_SET_PROPERTY_INT(attrObj, "offset", off);
 
 	return OBJECT_TO_JSVAL(attrObj);
 
@@ -97,8 +99,29 @@ jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribut
 jsval DwarfFile::dwarfAttributeValue(Dwarf_Attribute attr) {
 	jsval retVal = JSVAL_VOID;
 
+	JSObject *attrValueObj = JS_NewObject(cx, NULL, NULL, NULL);
+	jsval attrValueVal = OBJECT_TO_JSVAL(attrValueObj);
+
+	Dwarf_Half form;
+	int fres = dwarf_whatform(attr, &form, &error);
+	DWARF_CHECK(fres, "dwarf_whatform");
+
+	jsval formNameVal = JS_NEW_STRING_VAL(get_FORM_name(form));
+	JS_SetProperty(cx, attrValueObj, "formName", &formNameVal);
+	jsval formVal = INT_TO_JSVAL(form);
+	JS_SetProperty(cx, attrValueObj, "form", &formVal);
+
+	Dwarf_Half directForm;
+	fres = dwarf_whatform(attr, &directForm, &error);
+	DWARF_CHECK(fres, "dwarf_whatform_direct");
+
+	jsval directFormNameVal = JS_NEW_STRING_VAL(get_FORM_name(directForm));
+	JS_SetProperty(cx, attrValueObj, "directFormName", &directFormNameVal);
+	jsval directFormVal = INT_TO_JSVAL(directForm);
+	JS_SetProperty(cx, attrValueObj, "directForm", &directFormVal);
+
 	Dwarf_Half attrNum;
-	int fres = dwarf_whatattr(attr, &attrNum, &error);
+	fres = dwarf_whatattr(attr, &attrNum, &error);
 	DWARF_CHECK(fres, "dwarf_whatattr");
 	if (fres == DW_DLV_NO_ENTRY){
 		throw "could not get data value";
@@ -204,7 +227,9 @@ jsval DwarfFile::dwarfAttributeValue(Dwarf_Attribute attr) {
 		break;
 	}
 
-	return retVal;
+	// strdup free?
+	JS_SetProperty(cx, attrValueObj, "value", &retVal);
+	return attrValueVal;
 }
 
 jsval DwarfFile::dwarfFormXData(Dwarf_Attribute attr) {
@@ -268,29 +293,12 @@ jsval DwarfFile::dwarfFormDataValue(Dwarf_Attribute attr) {
 }
 
 jsval DwarfFile::dwarfFormValue(Dwarf_Attribute attr) {
-	JSObject *attrValueObj = JS_NewObject(cx, NULL, NULL, NULL);
-	jsval attrValueVal = OBJECT_TO_JSVAL(attrValueObj);
+	jsval valVal = JSVAL_VOID;
 	
 	Dwarf_Half form;
 	int fres = dwarf_whatform(attr, &form, &error);
 	DWARF_CHECK(fres, "dwarf_whatform");
 
-	jsval formNameVal = JS_NEW_STRING_VAL(get_FORM_name(form));
-	JS_SetProperty(cx, attrValueObj, "formName", &formNameVal);
-	jsval formVal = INT_TO_JSVAL(form);
-	JS_SetProperty(cx, attrValueObj, "form", &formVal);
-
-	Dwarf_Half directForm;
-	fres = dwarf_whatform(attr, &directForm, &error);
-	DWARF_CHECK(fres, "dwarf_whatform_direct");
-
-	jsval directFormNameVal = JS_NEW_STRING_VAL(get_FORM_name(directForm));
-	JS_SetProperty(cx, attrValueObj, "directFormName", &directFormNameVal);
-	jsval directFormVal = INT_TO_JSVAL(directForm);
-	JS_SetProperty(cx, attrValueObj, "directForm", &directFormVal);
-
-	jsval valVal = JSVAL_VOID;
-	
 	switch (form) {
 	case DW_FORM_addr:
 		{
@@ -400,12 +408,11 @@ jsval DwarfFile::dwarfFormValue(Dwarf_Attribute attr) {
 		
 	}
 
-	// strdup free?
-	JS_SetProperty(cx, attrValueObj, "value", &valVal);
-	return attrValueVal;
+	return valVal;
 }
 
 void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
+	/* die naming information */
 	char *name;
 	int res = dwarf_diename(die, &name, &error);
 	DWARF_CHECK(res, "dwarf_diename");
@@ -427,7 +434,8 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
 		jsval tagnameVal = JS_NEW_STRING_VAL(tagname);
 		JS_SetProperty(cx, dieObj, "tagName", &tagnameVal);
 	}
-
+	
+	/* die offset and die cu offset */
 	Dwarf_Off dieOff;
 	res = dwarf_dieoffset(die, &dieOff, &error);
 	DWARF_CHECK(res, "dwarf_dieoffset");
@@ -443,6 +451,7 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
 	JS_SetProperty(cx, dieObj, "cuOffset", &dieCuOffsetVal);
 	JS_SetProperty(cx, dieObj, "cuOffsetLen", &dieCuOffsetLenVal);
 
+	/* go through die attributes */
 	JSObject *attrArrayObj = JS_NewArrayObject(cx, 0, NULL);
 	jsval attrArrayVal = OBJECT_TO_JSVAL(attrArrayObj);
 	JS_SetProperty(cx, dieObj, "attributes", &attrArrayVal);
@@ -457,8 +466,21 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
 				jsval attrVal = dwarfAttribute(dieObj, tag, attrs[i]);
 				JS_SetElement(cx, attrArrayObj, i, &attrVal);
 			} catch (const char *s) {
-				jsval val = JS_NEW_STRING_VAL(s);
-				JS_SetElement(cx, attrArrayObj, i, &val);
+				JSObject *attrObj = JS_NewObject(cx, NULL, NULL, NULL);
+				jsval attrVal = OBJECT_TO_JSVAL(attrObj);
+
+				JS_SET_PROPERTY_STRING(attrObj, "name", "error");
+				JS_SET_PROPERTY_STRING(attrObj, "type", "error");
+				JS_SET_PROPERTY_INT(attrObj, "num", 0);
+
+				JSObject *attrValObj = JS_NewObject(cx, NULL, NULL, NULL);
+				JS_SET_PROPERTY_STRING(attrValObj, "value", s);
+				JS_SET_PROPERTY_INT(attrValObj, "form", DW_FORM_string);
+				JS_SET_PROPERTY_STRING(attrValObj, "formName", get_FORM_name(DW_FORM_string));
+
+				JS_SET_PROPERTY_OBJECT(attrObj, "value", attrValObj);
+
+				JS_SetElement(cx, attrArrayObj, i, &attrVal);
 				dwarf_dealloc(dbg, attrs[i], DW_DLA_ATTR);
 			}
 			dwarf_dealloc(dbg, attrs[i], DW_DLA_ATTR);
