@@ -494,9 +494,8 @@ JSBool jsJtag_getProperty(JSContext *cx, JSObject *obj, jsval idval, jsval *vp) 
 	switch (slot) {
 	case JSJTAG_DEVICENAME:
 		JS_JTAGICE_AVAILABLE_CHECK();
-	
-		*vp = STRING_TO_JSVAL(JS_NewString(cx, origJtag->device_name,
-																			 strlen(origJtag->device_name)));
+
+		*vp = JS_NEW_STRING_VAL(origJtag->device_name);
 		return JS_TRUE;
 		break;
 

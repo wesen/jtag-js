@@ -13,6 +13,7 @@
 #include "terminal-io.hh"
 
 #include "jsjtag.hh"
+#include "dwarf.hh"
 
 /* exported functions */
 JSBool myjs_print(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -59,6 +60,7 @@ static JSFunctionSpec myjs_global_functions[] = {
 	{ "print", myjs_print, 1, 0, 0 },
 	{ "quit", myjs_quit, 0, 0, 0 },
 	{ "exit", myjs_quit, 0, 0, 0 },
+	{ "readElf", myjs_readDwarf, 1, 0, 0},
 	{ "load", myjs_load, 1, 0, 0 },
 	{ 0 }
 };

@@ -107,4 +107,7 @@ manuel_SOURCES =	\
 	jsjtag.cc \
 	jsjtag.hh \
 	jsbreakpoint.hh \
-	jsbreakpoint.cc
+	jsbreakpoint.cc \
+	dwarf.cc \
+	dwarf.hh
+

@@ -7,6 +7,9 @@
 
 #define JS_REPORT_UNIMPLEMENTED() JS_ReportError(cx, "Feature not implemented yet")
 
+#define JS_NEW_STRING(s)     JS_NewString(cx, (s), strlen(s))
+#define JS_NEW_STRING_VAL(s) STRING_TO_JSVAL(JS_NEW_STRING(s))
+
 class JavaScript {
 protected:
 	JSRuntime *rt;
