@@ -55,7 +55,7 @@ public:
 	/* different types of attribute values */
 	jsval dwarfFormAddr(Dwarf_Attribute attrib);            // addr (binary)
 	jsval dwarfFormRefAddr(Dwarf_Attribute attrib);         // die offset 
-	jsval dwarfFRef(Dwarf_Attribute attrib);             // <%lu>
+	jsval dwarfFormRef(Dwarf_Attribute attrib);             // <%lu>
 	jsval dwarfFormBlock(Dwarf_Attribute attribute);        // list of hex (formblock)
 	jsval dwarfFormData(Dwarf_Attribute attribute);         // integer (signed / unsigned)
 	jsval dwarfFormSignedData(Dwarf_Attribute attribute);   // signed integer
@@ -69,6 +69,7 @@ public:
 	jsval dwarfCu(Dwarf_Die du_die);
 
 	/* whole dwarf file */
+	jsval dwarfElfHeader(Elf *elf);
 	jsval dwarfFile();
 };
 

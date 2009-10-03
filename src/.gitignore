@@ -12,3 +12,4 @@ cscope.out
 autoconf.hin
 manuel
 cscope
+*.stackdump
