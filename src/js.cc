@@ -196,8 +196,17 @@ void JavaScript::eval(const std::string &str) {
 		
 		JSString *str = JSVAL_TO_STRING(r);
 		if (str != NULL) {
-			// XXX split into chunks of TERMINAL_BUF_SIZE bytes
-			CONSOLE_PRINTF("%s\n", (JS_GetStringBytes(str)));
+			char *ptr = JS_GetStringBytes(str);
+			unsigned int numBytes = strlen(ptr);
+			const unsigned int bufLen = TERMINAL_BUF_SIZE - 5;
+			for (int i = 0; i < numBytes; i += bufLen) {
+				int end = std::min(numBytes, numBytes + bufLen);
+				char c = ptr[end];
+				ptr[end] = '\0';
+				CONSOLE_PRINTF("%s", ptr + i);
+				ptr[end] = c;
+			}
+			CONSOLE_PRINTF("\n");
 		} else {
 			TerminalIOClass::printTerminal("<undefined>\n");
 		}
