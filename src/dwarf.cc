@@ -84,6 +84,12 @@ jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribut
 	jsval valVal = dwarfAttributeValue(attr);
 	JS_SetProperty(cx, attrObj, "value", &valVal);
 
+	Dwarf_Off off;
+	res = dwarf_attr_offset(die, attr, &off, &error);
+	DWARF_CHECK(res, "dwarf_attr_offset");
+	jsval attrOffVal = INT_TO_JSVAL(off);
+	JS_SetProperty(cx, attrObj, "offset", &attrOffVal);
+
 	return OBJECT_TO_JSVAL(attrObj);
 
 }
@@ -421,6 +427,21 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
 		jsval tagnameVal = JS_NEW_STRING_VAL(tagname);
 		JS_SetProperty(cx, dieObj, "tagName", &tagnameVal);
 	}
+
+	Dwarf_Off dieOff;
+	res = dwarf_dieoffset(die, &dieOff, &error);
+	DWARF_CHECK(res, "dwarf_dieoffset");
+	jsval dieOffsetVal = INT_TO_JSVAL(dieOff);
+	JS_SetProperty(cx, dieObj, "offset", &dieOffsetVal);
+
+	Dwarf_Off cuOff;
+	Dwarf_Off cuOffLen;
+	res = dwarf_die_CU_offset_range(die, &cuOff, &cuOffLen, &error);
+	DWARF_CHECK(res, "dwarf_die_CU_offset");
+	jsval dieCuOffsetVal = INT_TO_JSVAL(cuOff);
+	jsval dieCuOffsetLenVal = INT_TO_JSVAL(cuOffLen);
+	JS_SetProperty(cx, dieObj, "cuOffset", &dieCuOffsetVal);
+	JS_SetProperty(cx, dieObj, "cuOffsetLen", &dieCuOffsetLenVal);
 
 	JSObject *attrArrayObj = JS_NewArrayObject(cx, 0, NULL);
 	jsval attrArrayVal = OBJECT_TO_JSVAL(attrArrayObj);

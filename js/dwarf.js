@@ -10,23 +10,25 @@ Dwarf = {
   },
   
   attributeAsString : function(attribute) {
-    var res = "[" + attribute.name + "]: ";
+    var res = "[" + attribute.name + " (o:" + attribute.offset + ") ]: ";
     var valString = (attribute.value ? (this.valueAsString(attribute.value.formName,
                                                            attribute.value.value) +
                                         " (" + attribute.value.formName + ", " +
                                         attribute.value.form + ")") : "undefined");
-    res += (" ".repeat(20 - res.length)) + valString;
+    res += (" ".repeat(25 - res.length)) + valString;
     return res;
   },
 
   dieAsString : function(die) {
     print("die " + die);
-    var res =   "  ".repeat(die.level) + "<" + die.tagName + " \"" + die.name + "\">\n";
+    var res =   "  ".repeat(die.level) + "<" + die.tagName + " \"" + die.name +
+      "\" (o: " + die.offset + ")>\n";  var file = readElf("test.avr.elf");
+
     var child;
     var i;
 
     for (i = 0; i < die.attributes.length; i++) {
-      res += " ".repeat(15) + "  " + this.attributeAsString(die.attributes[i]) + "\n";
+      res += " ".repeat(10) + "  " + this.attributeAsString(die.attributes[i]) + "\n";
     }
     res += "\n";
     
