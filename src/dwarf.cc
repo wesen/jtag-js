@@ -22,8 +22,8 @@
 
 #define DWARF_CHECK(res, str) DWARF_CHECK_FULL(res, str, __FILE__, __LINE__)
 
-DwarfFile::DwarfFile(JSContext *_cx, const char *_filename) :
-	cx(_cx), filename(_filename) {
+DwarfFile::DwarfFile(JSContext *_cx, JSObject *_obj, const char *_filename) :
+	cx(_cx), obj(_obj), filename(_filename) {
 }
 
 DwarfFile::~DwarfFile() {
@@ -180,7 +180,13 @@ jsval DwarfFile::dwarfFile(){
 	Elf_Cmd cmd;
 	Elf *arf, *elf;
 
-	JSObject *elfArrayObject = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *dwarfFileObj = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *elfArrayObj = JS_NewArrayObject(cx, 0, NULL);
+	jsval val = OBJECT_TO_JSVAL(elfArrayObj);
+	jsval nameVal = JS_NEW_STRING_VAL(filename.c_str());
+	JS_SetProperty(cx, dwarfFileObj, "filename", &nameVal);
+	JS_SetProperty(cx, dwarfFileObj, "elf", &val);
+	
 	try {
 		cmd = ELF_C_READ;
 		arf = elf_begin(fd, cmd, (Elf *)0);
@@ -199,7 +205,7 @@ jsval DwarfFile::dwarfFile(){
 				} else {
 					try {
 						jsval val = dwarfElfHeader(elf);
-						JS_SetElement(cx, elfArrayObject, elfHeaderCnt, &val);
+						JS_SetElement(cx, elfArrayObj, elfHeaderCnt, &val);
 					} catch (...) {
 						elf_end(elf);
 						throw;
@@ -218,7 +224,7 @@ jsval DwarfFile::dwarfFile(){
 		throw;
 	}
 
-	return OBJECT_TO_JSVAL(elfArrayObject);
+	return OBJECT_TO_JSVAL(dwarfFileObj);
 }
 
 
@@ -229,7 +235,7 @@ JSBool myjs_readDwarf(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 		return JS_FALSE;
 	}
 
-	DwarfFile dwarfFile(cx, str);
+	DwarfFile dwarfFile(cx, obj, str);
 	try {
 		*rval = dwarfFile.dwarfFile();
 		return JS_TRUE;

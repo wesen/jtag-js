@@ -26,11 +26,12 @@ protected:
 	Dwarf_Error error;
 	Dwarf_Die die;
 	JSContext *cx;
+	JSObject *obj;
 
 	std::string filename;
 	
 public:
-	DwarfFile(JSContext *_cx, const char *filename);
+	DwarfFile(JSContext *_cx, JSObject *_obj, const char *filename);
 	~DwarfFile();
 
 	jsval getSmallEncodingIntegerName();
