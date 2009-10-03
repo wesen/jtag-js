@@ -11,16 +11,20 @@
 #include <dwarf.h>
 #include <libdwarf.h>
 
+#include "dwarfnaming.hh"
 #include "dwarf.hh"
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 // #define DWARF_UNIMPLEMENTED() throw DwarfException()
-#define DWARF_UNIMPLEMENTED(name) throw (name ": unimplemented")
+#define DWARF_UNIMPLEMENTED(name) \
+	throw (name ": unimplemented in file " __FILE__ " at line " TOSTRING(__LINE__))
 
-#define DWARF_CHECK_FULL(res, str, file, line)																		\
-	if ((res) == DW_DLV_ERROR) throw (str ": got dwarf error in file " file \
-																		" at line ")
+#define DWARF_CHECK(res, str)																		\
+	if ((res) == DW_DLV_ERROR) throw (str ": got dwarf error in file " __FILE__ \
+																		" at line " TOSTRING(__LINE___))
 
-#define DWARF_CHECK(res, str) DWARF_CHECK_FULL(res, str, __FILE__, __LINE__)
 
 DwarfFile::DwarfFile(JSContext *_cx, JSObject *_obj, const char *_filename) :
 	cx(_cx), obj(_obj), filename(_filename) {
@@ -103,16 +107,127 @@ jsval DwarfFile::dwarfFormString(Dwarf_Attribute attribute) {       // string
 	DWARF_UNIMPLEMENTED("dwarfFormString");
 }
 
+void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die die) {
+	char *name;
+	int res = dwarf_diename(die, &name, &error);
+	DWARF_CHECK(res, "dwarf_diename");
+	
+	if (res == DW_DLV_OK) {
+		jsval nameVal = JS_NEW_STRING_VAL(name);
+		dwarf_dealloc(dbg, name, DW_DLA_STRING);
+		JS_SetProperty(cx, dieObj, "name", &nameVal);
+	}
+
+	Dwarf_Half tag;
+	res = dwarf_tag(die, &tag, &error);
+	DWARF_CHECK(res, "dwarf_tag");
+	if (res == DW_DLV_OK) {
+		jsval tagVal = INT_TO_JSVAL(tag);
+		JS_SetProperty(cx, dieObj, "tag", &tagVal);
+		
+		const char *tagname = get_TAG_name(tag);
+		jsval tagnameVal = JS_NEW_STRING_VAL(tagname);
+		JS_SetProperty(cx, dieObj, "tagName", &tagnameVal);
+	}
+
+	JSObject *attrArrayObj = JS_NewArrayObject(cx, 0, NULL);
+	jsval attrArrayVal = OBJECT_TO_JSVAL(attrArrayObj);
+	JS_SetProperty(cx, dieObj, "attributes", &attrArrayVal);
+
+	Dwarf_Attribute *attrs;
+	Dwarf_Signed cnt;
+	res = dwarf_attrlist(die, &attrs, &cnt, &error);
+	DWARF_CHECK(res, "dwarf_attrlist");
+	try {
+		for (int i = 0; i < cnt; i++) {
+			try {
+				jsval attrVal = dwarfAttribute(dieObj, attrs[i]);
+				JS_SetElement(cx, dieObj, i, &attrVal);
+			} catch (const char *s) {
+				jsval val = JS_NEW_STRING_VAL(s);
+				JS_SetElement(cx, dieObj, i, &val);
+				dwarf_dealloc(dbg, attrs[i], DW_DLA_ATTR);
+			}
+			dwarf_dealloc(dbg, attrs[i], DW_DLA_ATTR);
+		}
+	} catch(...) {
+		dwarf_dealloc(dbg, attrs, DW_DLA_LIST);
+		throw;
+	}
+
+	dwarf_dealloc(dbg, attrs, DW_DLA_LIST);
+}
+
+void DwarfFile::dwarfDieLines(JSObject *dieObj, Dwarf_Die die) {
+	//	DWARF_UNIMPLEMENTED("dwarfDieLines");
+}
 
 /* dwarf die */
-jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die die) {
-	DWARF_UNIMPLEMENTED("dwarfDie");
+jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
+	//	DWARF_UNIMPLEMENTED("dwarfDie");
+	JSObject *dieObj = JS_NewObject(cx, NULL, NULL, NULL);
+	jsval parentVal = OBJECT_TO_JSVAL(parent);
+	JS_SetProperty(cx, dieObj, "parent", &parentVal);
+	jsval levelVal = INT_TO_JSVAL(level);
+	JS_SetProperty(cx, dieObj, "level", &levelVal);
+	JSObject *childArrayObj = JS_NewArrayObject(cx, 0, NULL);
+	jsval childArrayVal = OBJECT_TO_JSVAL(childArrayObj);
+	JS_SetProperty(cx, dieObj, "children", &childArrayVal);
+
+	dwarfDieData(dieObj, in_die);
+	dwarfDieLines(dieObj, in_die);
+
+	/* get child */
+	Dwarf_Die child;
+	int res = dwarf_child(in_die, &child, &error);
+	DWARF_CHECK(res, "dwarf_child");
+	if (res == DW_DLV_OK) {
+		try {
+			jsval val = dwarfDie(dieObj, child, level + 1);
+			int i = 0;
+			JS_SetElement(cx, childArrayObj, i, &val);
+
+			i++;
+			Dwarf_Die cur_die = child;
+			for (;;i++) {
+				Dwarf_Die sib_die;
+				
+				int res = dwarf_siblingof(dbg, cur_die, &sib_die, &error);
+				DWARF_CHECK(res, "dwarf_siblingof");
+				try {
+					if (res == DW_DLV_OK) {
+						jsval dieVal = dwarfDie(dieObj, sib_die, level);
+						JS_SetElement(cx, childArrayObj, i, &dieVal);
+					} else if (res == DW_DLV_NO_ENTRY) {
+						break;
+					}
+				} catch (...) {
+					if (cur_die != child) {
+						dwarf_dealloc(dbg, cur_die, DW_DLA_DIE);
+					}
+					throw;
+				}
+				
+				if (cur_die != child) {
+					dwarf_dealloc(dbg, cur_die, DW_DLA_DIE);
+				}
+				
+				cur_die = sib_die;
+			}
+		} catch (...) {
+			dwarf_dealloc(dbg, child, DW_DLA_DIE);
+			throw;
+		}
+		dwarf_dealloc(dbg, child, DW_DLA_DIE);
+	}
+
+	/* walk siblings */
+	return OBJECT_TO_JSVAL(dieObj);
 }
 
 /* dwarf compilation unit */
-jsval DwarfFile::dwarfCu(Dwarf_Die cu_die) {
-	//	DWARF_UNIMPLEMENTED("dwarfCu");
-	return JS_NEW_STRING_VAL("cu_die");
+jsval DwarfFile::dwarfCu(Dwarf_Die in_die) {
+	return dwarfDie(NULL, in_die);
 }
 
 /* single dwarf section */

@@ -65,10 +65,12 @@ public:
 	jsval dwarfFormString(Dwarf_Attribute attribute);       // string
 
 	/* dwarf die */
-	jsval dwarfDie(JSObject *parent, Dwarf_Die die);
+	void dwarfDieData(JSObject *dieObj, Dwarf_Die die);
+	void dwarfDieLines(JSObject *dieObj, Dwarf_Die die);
+	jsval dwarfDie(JSObject *parent, Dwarf_Die die, int level = 0);
 
 	/* dwarf compilation unit */
-	jsval dwarfCu(Dwarf_Die du_die);
+	jsval dwarfCu(Dwarf_Die cu_die);
 
 	/* whole dwarf file */
 	jsval dwarfElfHeader(Elf *elf);

@@ -109,5 +109,7 @@ manuel_SOURCES =	\
 	jsbreakpoint.hh \
 	jsbreakpoint.cc \
 	dwarf.cc \
-	dwarf.hh
+	dwarf.hh \
+	dwarfnaming.hh \
+	dwarfnaming.cc
 
