@@ -26,3 +26,14 @@ Function.method('inherits', function (Parent) {
   this.prototype = new Parent(  );
   return this;
 });
+
+
+String.method('repeat', function (reps) {
+  var res = "";
+  var i;
+  
+  for (i = 0; i < reps; i++) {
+    res += this;
+  }
+  return res;
+});

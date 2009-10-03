@@ -1,4 +1,5 @@
 load("helpers.js");
+load("dwarf.js");
 
 // avr specific functions
 

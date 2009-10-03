@@ -22,8 +22,10 @@
 	throw (name ": unimplemented in file " __FILE__ " at line " TOSTRING(__LINE__))
 
 #define DWARF_CHECK(res, str)																		\
-	if ((res) == DW_DLV_ERROR) throw (str ": got dwarf error in file " __FILE__ \
-																		" at line " TOSTRING(__LINE___))
+	if ((res) == DW_DLV_ERROR) { \
+	   throw (str ": got dwarf error in file " __FILE__	\
+						" at line " TOSTRING(__LINE___)); \
+	}
 
 
 DwarfFile::DwarfFile(JSContext *_cx, JSObject *_obj, const char *_filename) :
@@ -59,7 +61,26 @@ jsval DwarfFile::dwarfOpBreg(Dwarf_Unsigned opd1, Dwarf_Unsigned opd2) {
 
 /* dwarf attribute */
 jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Attribute attr) {
-	DWARF_UNIMPLEMENTED("dwarfAttribute");
+	JSObject *attrObj = JS_NewObject(cx, NULL, NULL, NULL);
+	jsval parentVal = OBJECT_TO_JSVAL(parent);
+	JS_SetProperty(cx, attrObj, "parent", &parentVal);
+	
+	Dwarf_Half attrNum;
+	int res = dwarf_whatattr(attr, &attrNum, &error);
+	DWARF_CHECK(res, "dwarf_whatattr");
+	jsval attrNumVal = INT_TO_JSVAL(attrNum);
+	JS_SetProperty(cx, attrObj, "num", &attrNumVal);
+
+	const char *atname = get_AT_name(attrNum);
+	jsval atnameVal = JS_NEW_STRING_VAL(atname);
+	JS_SetProperty(cx, attrObj, "name", &atnameVal);
+
+	switch (attrNum) {
+		
+	}
+
+	return OBJECT_TO_JSVAL(attrObj);
+
 }
 
 jsval DwarfFile::dwarfAttributeName(Dwarf_Attribute attr) {
@@ -142,10 +163,10 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die die) {
 		for (int i = 0; i < cnt; i++) {
 			try {
 				jsval attrVal = dwarfAttribute(dieObj, attrs[i]);
-				JS_SetElement(cx, dieObj, i, &attrVal);
+				JS_SetElement(cx, attrArrayObj, i, &attrVal);
 			} catch (const char *s) {
 				jsval val = JS_NEW_STRING_VAL(s);
-				JS_SetElement(cx, dieObj, i, &val);
+				JS_SetElement(cx, attrArrayObj, i, &val);
 				dwarf_dealloc(dbg, attrs[i], DW_DLA_ATTR);
 			}
 			dwarf_dealloc(dbg, attrs[i], DW_DLA_ATTR);
@@ -196,7 +217,7 @@ jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
 				DWARF_CHECK(res, "dwarf_siblingof");
 				try {
 					if (res == DW_DLV_OK) {
-						jsval dieVal = dwarfDie(dieObj, sib_die, level);
+						jsval dieVal = dwarfDie(dieObj, sib_die, level + 1);
 						JS_SetElement(cx, childArrayObj, i, &dieVal);
 					} else if (res == DW_DLV_NO_ENTRY) {
 						break;
