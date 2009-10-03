@@ -106,19 +106,15 @@ jsval DwarfFile::dwarfAttributeValue(Dwarf_Attribute attr) {
 	int fres = dwarf_whatform(attr, &form, &error);
 	DWARF_CHECK(fres, "dwarf_whatform");
 
-	jsval formNameVal = JS_NEW_STRING_VAL(get_FORM_name(form));
-	JS_SetProperty(cx, attrValueObj, "formName", &formNameVal);
-	jsval formVal = INT_TO_JSVAL(form);
-	JS_SetProperty(cx, attrValueObj, "form", &formVal);
+	JS_SET_PROPERTY_STRING(attrValueObj, "formName", get_FORM_name(form));
+	JS_SET_PROPERTY_INT(attrValueObj, "form", form);
 
 	Dwarf_Half directForm;
 	fres = dwarf_whatform(attr, &directForm, &error);
 	DWARF_CHECK(fres, "dwarf_whatform_direct");
 
-	jsval directFormNameVal = JS_NEW_STRING_VAL(get_FORM_name(directForm));
-	JS_SetProperty(cx, attrValueObj, "directFormName", &directFormNameVal);
-	jsval directFormVal = INT_TO_JSVAL(directForm);
-	JS_SetProperty(cx, attrValueObj, "directForm", &directFormVal);
+	JS_SET_PROPERTY_STRING(attrValueObj, "directFormName", get_FORM_name(directForm));
+	JS_SET_PROPERTY_INT(attrValueObj, "directForm", directForm);
 
 	Dwarf_Half attrNum;
 	fres = dwarf_whatattr(attr, &attrNum, &error);
@@ -431,43 +427,35 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
 	DWARF_CHECK(res, "dwarf_diename");
 	
 	if (res == DW_DLV_OK) {
-		jsval nameVal = JS_NEW_STRING_VAL(name);
+		JS_SET_PROPERTY_STRING(dieObj, "name", name);
 		dwarf_dealloc(dbg, name, DW_DLA_STRING);
-		JS_SetProperty(cx, dieObj, "name", &nameVal);
 	}
 
 	Dwarf_Half tag;
 	res = dwarf_tag(die, &tag, &error);
 	DWARF_CHECK(res, "dwarf_tag");
 	if (res == DW_DLV_OK) {
-		jsval tagVal = INT_TO_JSVAL(tag);
-		JS_SetProperty(cx, dieObj, "tag", &tagVal);
+		JS_SET_PROPERTY_INT(dieObj, "tag", tag);
 		
-		const char *tagname = get_TAG_name(tag);
-		jsval tagnameVal = JS_NEW_STRING_VAL(tagname);
-		JS_SetProperty(cx, dieObj, "tagName", &tagnameVal);
+		JS_SET_PROPERTY_STRING(dieObj, "tagName", get_TAG_name(tag));
 	}
 	
 	/* die offset and die cu offset */
 	Dwarf_Off dieOff;
 	res = dwarf_dieoffset(die, &dieOff, &error);
 	DWARF_CHECK(res, "dwarf_dieoffset");
-	jsval dieOffsetVal = INT_TO_JSVAL(dieOff);
-	JS_SetProperty(cx, dieObj, "offset", &dieOffsetVal);
+	JS_SET_PROPERTY_INT(dieObj, "offset", dieOff);
 
 	Dwarf_Off cuOff;
 	Dwarf_Off cuOffLen;
 	res = dwarf_die_CU_offset_range(die, &cuOff, &cuOffLen, &error);
 	DWARF_CHECK(res, "dwarf_die_CU_offset");
-	jsval dieCuOffsetVal = INT_TO_JSVAL(cuOff);
-	jsval dieCuOffsetLenVal = INT_TO_JSVAL(cuOffLen);
-	JS_SetProperty(cx, dieObj, "cuOffset", &dieCuOffsetVal);
-	JS_SetProperty(cx, dieObj, "cuOffsetLen", &dieCuOffsetLenVal);
+	JS_SET_PROPERTY_INT(dieObj, "cuOffset", cuOff);
+	JS_SET_PROPERTY_INT(dieObj, "cuOffsetLength", cuOffLen);
 
 	/* go through die attributes */
 	JSObject *attrArrayObj = JS_NewArrayObject(cx, 0, NULL);
-	jsval attrArrayVal = OBJECT_TO_JSVAL(attrArrayObj);
-	JS_SetProperty(cx, dieObj, "attributes", &attrArrayVal);
+	JS_SET_PROPERTY_OBJECT(dieObj, "attributes", attrArrayObj);
 
 	Dwarf_Attribute *attrs;
 	Dwarf_Signed cnt;
@@ -514,13 +502,11 @@ void DwarfFile::dwarfDieLines(JSObject *dieObj, Dwarf_Die die) {
 jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
 	//	DWARF_UNIMPLEMENTED("dwarfDie");
 	JSObject *dieObj = JS_NewObject(cx, NULL, NULL, NULL);
-	jsval parentVal = OBJECT_TO_JSVAL(parent);
-	JS_SetProperty(cx, dieObj, "parent", &parentVal);
-	jsval levelVal = INT_TO_JSVAL(level);
-	JS_SetProperty(cx, dieObj, "level", &levelVal);
+	JS_SET_PROPERTY_OBJECT(dieObj, "parent", parent);
+	JS_SET_PROPERTY_INT(dieObj, "level", level);
+
 	JSObject *childArrayObj = JS_NewArrayObject(cx, 0, NULL);
-	jsval childArrayVal = OBJECT_TO_JSVAL(childArrayObj);
-	JS_SetProperty(cx, dieObj, "children", &childArrayVal);
+	JS_SET_PROPERTY_OBJECT(dieObj, "children", childArrayObj);
 
 	die = in_die;
 	dwarfDieData(dieObj, in_die);
@@ -646,10 +632,8 @@ jsval DwarfFile::dwarfFile(){
 
 	JSObject *dwarfFileObj = JS_NewObject(cx, NULL, NULL, NULL);
 	JSObject *elfArrayObj = JS_NewArrayObject(cx, 0, NULL);
-	jsval val = OBJECT_TO_JSVAL(elfArrayObj);
-	jsval nameVal = JS_NEW_STRING_VAL(filename.c_str());
-	JS_SetProperty(cx, dwarfFileObj, "filename", &nameVal);
-	JS_SetProperty(cx, dwarfFileObj, "elf", &val);
+	JS_SET_PROPERTY_OBJECT(dwarfFileObj, "elf", elfArrayObj);
+	JS_SET_PROPERTY_STRING(dwarfFileObj, "filename", filename.c_str());
 	
 	try {
 		cmd = ELF_C_READ;
