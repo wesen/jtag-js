@@ -1,6 +1,7 @@
 #ifndef JS_H__
 #define JS_H__
 
+#include <string.h>
 #include <string>
 #define XP_UNIX 1
 #include <js/jsapi.h>

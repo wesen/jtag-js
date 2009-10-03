@@ -187,7 +187,14 @@ void JavaScript::eval(const std::string &str) {
 	if (!ret) {
 		return;
 	} else {
-		JSString *str = JS_ValueToString(cx, rval);
+		// call uneval
+		jsval r;
+		if (!JS_CallFunctionName(cx, JS_GetGlobalObject(cx), "uneval", 1,
+														 &rval, &r)) {
+			JS_ReportError(cx, "Could not uneval evaluation result");
+		}
+		
+		JSString *str = JSVAL_TO_STRING(r);
 		if (str != NULL) {
 			// XXX split into chunks of TERMINAL_BUF_SIZE bytes
 			CONSOLE_PRINTF("%s\n", (JS_GetStringBytes(str)));
