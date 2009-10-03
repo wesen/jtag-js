@@ -233,7 +233,20 @@ jsval DwarfFile::dwarfAttributeValue(Dwarf_Attribute attr) {
 }
 
 jsval DwarfFile::dwarfFormXData(Dwarf_Attribute attr) {
-	return JSVAL_VOID;
+	Dwarf_Signed tempsd;
+	Dwarf_Unsigned tempud;
+
+	int ures = dwarf_formudata(attr, &tempud, &error);
+	int sres = dwarf_formsdata(attr, &tempsd, &error);
+
+	if (ures == DW_DLV_OK) {
+		return INT_TO_JSVAL(tempud);
+	}
+	if (sres == DW_DLV_OK) {
+		return INT_TO_JSVAL(tempsd);
+	}
+
+	throw("could get neither signed nor unsigned data value");
 }
 
 jsval DwarfFile::dwarfFormDataValue(Dwarf_Attribute attr) {
