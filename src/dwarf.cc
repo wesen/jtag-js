@@ -22,7 +22,8 @@
 
 #define DWARF_CHECK(res, str) DWARF_CHECK_FULL(res, str, __FILE__, __LINE__)
 
-DwarfFile::DwarfFile(const char *_filename) : filename(_filename) {
+DwarfFile::DwarfFile(JSContext *_cx, const char *_filename) :
+	cx(_cx), filename(_filename) {
 }
 
 DwarfFile::~DwarfFile() {
@@ -111,7 +112,7 @@ jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die die) {
 /* dwarf compilation unit */
 jsval DwarfFile::dwarfCu(Dwarf_Die cu_die) {
 	//	DWARF_UNIMPLEMENTED("dwarfCu");
-	return JSVAL_VOID;
+	return JS_NEW_STRING_VAL("cu_die");
 }
 
 /* single dwarf section */
@@ -119,7 +120,8 @@ jsval DwarfFile::dwarfElfHeader(Elf *elf) {
 	int res = dwarf_elf_init(elf, DW_DLC_READ, NULL, NULL, &dbg, &error);
 	DWARF_CHECK(res, "dwarf_elf_init");
 
-	jsval ret = JSVAL_VOID;
+	JSObject *cuArrayObj = JS_NewArrayObject(cx, 0, NULL);
+	
 	for (int cu_number = 0; ; cu_number++) {
 		Dwarf_Die no_die = 0;
 		Dwarf_Die cu_die = 0;
@@ -147,6 +149,8 @@ jsval DwarfFile::dwarfElfHeader(Elf *elf) {
 
 		try {
 			jsval val = dwarfCu(cu_die);
+			JS_SetElement(cx, cuArrayObj, cu_number, &val);
+			
 		} catch (...) {
 			dwarf_dealloc(dbg, cu_die, DW_DLA_DIE);
 			throw;
@@ -154,11 +158,11 @@ jsval DwarfFile::dwarfElfHeader(Elf *elf) {
 
 		dwarf_dealloc(dbg, cu_die, DW_DLA_DIE);
 	}
-	
+
 	res = dwarf_finish(dbg, &error);
 	DWARF_CHECK(res, "dwarf_finish");
 
-	return ret;
+	return OBJECT_TO_JSVAL(cuArrayObj);
 }
 
 /* whole dwarf file */
@@ -175,8 +179,8 @@ jsval DwarfFile::dwarfFile(){
 
 	Elf_Cmd cmd;
 	Elf *arf, *elf;
-	jsval ret = JSVAL_VOID;
 
+	JSObject *elfArrayObject = JS_NewArrayObject(cx, 0, NULL);
 	try {
 		cmd = ELF_C_READ;
 		arf = elf_begin(fd, cmd, (Elf *)0);
@@ -186,6 +190,7 @@ jsval DwarfFile::dwarfFile(){
 		}
 
 		try {
+			int elfHeaderCnt = 0;
 			while ((elf = elf_begin(fd, cmd, arf)) != 0) {
 				Elf32_Ehdr *eh32;
 				eh32 = elf32_getehdr(elf);
@@ -193,12 +198,14 @@ jsval DwarfFile::dwarfFile(){
 					throw "could not get ELF header";
 				} else {
 					try {
-						dwarfElfHeader(elf);
+						jsval val = dwarfElfHeader(elf);
+						JS_SetElement(cx, elfArrayObject, elfHeaderCnt, &val);
 					} catch (...) {
 						elf_end(elf);
 						throw;
 					}
 				}
+					elfHeaderCnt++;
 				cmd = elf_next(elf);
 			}
 		} catch (...) {
@@ -211,19 +218,18 @@ jsval DwarfFile::dwarfFile(){
 		throw;
 	}
 
-	return ret;
-	
+	return OBJECT_TO_JSVAL(elfArrayObject);
 }
 
 
 
-JSBool myjs_readDwarf(JSContext*cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool myjs_readDwarf(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 	const char *str;
 	if (!JS_ConvertArguments(cx, argc, argv, "s", &str)) {
 		return JS_FALSE;
 	}
 
-	DwarfFile dwarfFile(str);
+	DwarfFile dwarfFile(cx, str);
 	try {
 		*rval = dwarfFile.dwarfFile();
 		return JS_TRUE;
