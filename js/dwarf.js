@@ -1,16 +1,32 @@
 Dwarf = {
+  valueAsString : function (type, value) {
+    switch (type) {
+      case "addr":
+      return value.hex();
+
+      default:
+      return value;
+    }
+  },
+  
   attributeAsString : function(attribute) {
-    return "[" + attribute.name + "]";
+    var res = "[" + attribute.name + "]: ";
+    var valString = (attribute.value ? (this.valueAsString(attribute.value.formName,
+                                                           attribute.value.value) +
+                                        " (" + attribute.value.formName + ", " +
+                                        attribute.value.form + ")") : "undefined");
+    res += (" ".repeat(20 - res.length)) + valString;
+    return res;
   },
 
   dieAsString : function(die) {
     print("die " + die);
-    var res =  " ".repeat(die.level) + "<" + die.tagName + " \"" + die.name + "\">\n";
+    var res =   "  ".repeat(die.level) + "<" + die.tagName + " \"" + die.name + "\">\n";
     var child;
     var i;
 
     for (i = 0; i < die.attributes.length; i++) {
-      res += " ".repeat(die.level) + "  " + this.attributeAsString(die.attributes[i]) + "\n";
+      res += " ".repeat(15) + "  " + this.attributeAsString(die.attributes[i]) + "\n";
     }
     res += "\n";
     

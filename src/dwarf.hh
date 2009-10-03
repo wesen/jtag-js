@@ -10,6 +10,8 @@
 #include "dwarf.h"
 #include "libdwarf.h"
 
+#include "dwarfnaming.hh"
+
 #if 0
 class DwarfException : public std::runtime_error {
 public:
@@ -34,14 +36,16 @@ public:
 	DwarfFile(JSContext *_cx, JSObject *_obj, const char *filename);
 	~DwarfFile();
 
-	jsval getSmallEncodingIntegerName();
+	jsval getSmallEncodingIntegerName(Dwarf_Attribute attr,
+																		const char *attr_name,
+																		encoding_type_func val_as_string);
 
 	/**
 	 * functions to convert a part of the DWARF tree
 	 */
 
 	/* location lists */
-	jsval dwarfLocationList(Dwarf_Die die);
+	jsval dwarfLocationList(Dwarf_Attribute attr);
 	jsval dwarfLocation(Dwarf_Loc *loc);
 	jsval dwarfOpAddr(Dwarf_Unsigned opd);
 	jsval dwarfOpSigned(Dwarf_Unsigned opd);
@@ -49,20 +53,11 @@ public:
 	jsval dwarfOpBreg(Dwarf_Unsigned opd1, Dwarf_Unsigned opd2);
 
 	/* dwarf attribute */
-	jsval dwarfAttribute(JSObject *parent, Dwarf_Attribute attr);
-	jsval dwarfAttributeName(Dwarf_Attribute attr);  
+	jsval dwarfFormXData(Dwarf_Attribute attr);
+	jsval dwarfFormDataValue(Dwarf_Attribute attr);
+	jsval dwarfFormValue(Dwarf_Attribute attr);
+	jsval dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribute attr);
 	jsval dwarfAttributeValue(Dwarf_Attribute attr);
-	jsval dwarfAttributeType(Dwarf_Attribute attr);
-
-	/* different types of attribute values */
-	jsval dwarfFormAddr(Dwarf_Attribute attrib);            // addr (binary)
-	jsval dwarfFormRefAddr(Dwarf_Attribute attrib);         // die offset 
-	jsval dwarfFormRef(Dwarf_Attribute attrib);             // <%lu>
-	jsval dwarfFormBlock(Dwarf_Attribute attribute);        // list of hex (formblock)
-	jsval dwarfFormData(Dwarf_Attribute attribute);         // integer (signed / unsigned)
-	jsval dwarfFormSignedData(Dwarf_Attribute attribute);   // signed integer
-	jsval dwarfFormUnsignedData(Dwarf_Attribute attribute); // unsigned integer
-	jsval dwarfFormString(Dwarf_Attribute attribute);       // string
 
 	/* dwarf die */
 	void dwarfDieData(JSObject *dieObj, Dwarf_Die die);
