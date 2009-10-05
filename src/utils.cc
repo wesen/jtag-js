@@ -223,6 +223,10 @@ void check(bool ok, const char *fmt, ...)
     va_end(args);
 }
 
+void unixCheck(int status) {
+	unixCheck(status, "error: %s", strerror(status));
+}
+
 void unixCheck(int status, const char *fmt, ...)
 {
     va_list args;

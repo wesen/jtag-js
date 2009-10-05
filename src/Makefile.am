@@ -63,7 +63,9 @@ avarice_SOURCES =	\
 	select.cc       \
 	select.hh       \
 	console.cc      \
-	console.hh
+	console.hh      \
+	tcp.cc          \
+	tcp.hh
 
 manuel_SOURCES =	\
 	crc16.h		\
@@ -111,5 +113,7 @@ manuel_SOURCES =	\
 	dwarf.cc \
 	dwarf.hh \
 	dwarfnaming.hh \
-	dwarfnaming.cc
+	dwarfnaming.cc \
+	tcp.cc \
+	tcp.hh
 

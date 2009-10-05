@@ -29,72 +29,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <termios.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <netinet/tcp.h>
-#include <fcntl.h>
 
 #include "avarice.h"
 #include "remote.h"
 #include "jtag.h"
 #include "jtag1.h"
 #include "jtag2.h"
+#include "tcp.hh"
+
 #include "gnu_getopt.h"
 
 bool ignoreInterrupts;
-
-static int makeSocket(struct sockaddr_in *name, unsigned short int port)
-{
-	int sock;
-	int tmp;
-	struct protoent *protoent;
-
-	sock = socket(PF_INET, SOCK_STREAM, 0);
-	gdbRemote.check(sock);
-
-	// Allow rapid reuse of this port.
-	tmp = 1;
-	gdbRemote.check(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&tmp, sizeof(tmp)));
-
-	// Enable TCP keep alive process.
-	tmp = 1;
-	gdbRemote.check(setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&tmp, sizeof(tmp)));
-
-	gdbRemote.check(bind(sock, (struct sockaddr *)name, sizeof(*name)));
-
-	protoent = getprotobyname("tcp");
-	check(protoent != NULL, "tcp protocol unknown (oops?)");
-
-	tmp = 1;
-	gdbRemote.check(setsockopt(sock, protoent->p_proto, TCP_NODELAY,
-											(char *)&tmp, sizeof(tmp)));
-
-	return sock;
-}
-
-
-static void initSocketAddress(struct sockaddr_in *name,
-															const char *hostname, unsigned short int port)
-{
-	struct hostent *hostInfo;
-
-	memset(name, 0, sizeof(*name));
-	name->sin_family = AF_INET;
-	name->sin_port = htons(port);
-	// Try numeric interpretation (1.2.3.4) first, then
-	// hostname resolution if that failed.
-	if (inet_aton(hostname, &name->sin_addr) == 0)
-    {
-			hostInfo = gethostbyname(hostname);
-			check(hostInfo != NULL, "Unknown host %s", hostname);
-			name->sin_addr = *(struct in_addr *)hostInfo->h_addr;
-    }
-}
 
 static unsigned long parseJtagBitrate(const char *val)
 {
@@ -651,16 +597,16 @@ int main(int argc, char **argv)
 		theJtagICE->resumeProgram();
 	else
     {
-			initSocketAddress(&name, hostName, hostPortNumber);
-			sock = makeSocket(&name, hostPortNumber);
+			TCPServer::initSocketAddress(&name, hostName, hostPortNumber);
+			sock = TCPServer::makeSocket(&name, hostPortNumber);
+
 			console->statusOut("Waiting for connection on port %hu.\n", hostPortNumber);
-			gdbRemote.check(listen(sock, 1));
+			SYSCALL_CHECK(listen(sock, 1));
 
-			if (detach)
-        {
+			if (detach) {
 					int child = fork();
-
 					unixCheck(child, "Failed to fork");
+					
 					if (child != 0)
 						_exit(0);
 					else
@@ -670,9 +616,10 @@ int main(int argc, char **argv)
 			// Connection request on original socket.
 			socklen_t size = (socklen_t)sizeof(clientname);
 			int gfd = accept(sock, (struct sockaddr *)&clientname, &size);
-			gdbRemote.check(gfd);
+			unixCheck(gfd);
+
 			console->statusOut("Connection opened by host %s, port %hu.\n",
-								inet_ntoa(clientname.sin_addr), ntohs(clientname.sin_port));
+												 inet_ntoa(clientname.sin_addr), ntohs(clientname.sin_port));
 
 			gdbRemote.setFile(gfd);
 

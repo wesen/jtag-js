@@ -86,13 +86,13 @@ public:
   ~ThreadedClass() {
   }
 
-  void go() {
+  virtual void start() {
     assert(running == false);
     running = true;
     pthread_create(&thread, NULL, &ThreadedClass::startThread, this);
   }
 
-  void stop() {
+  virtual void stop() {
     assert(running == true);
     running = false;
     stopRequested = true;

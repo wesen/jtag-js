@@ -8,14 +8,13 @@
 
 #include <libelf.h>
 
+#include "avarice.h"
+
 #include <dwarf.h>
 #include <libdwarf.h>
 
 #include "dwarfnaming.hh"
 #include "dwarf.hh"
-
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
 
 // #define DWARF_UNIMPLEMENTED() throw DwarfException()
 #define DWARF_UNIMPLEMENTED(name) \

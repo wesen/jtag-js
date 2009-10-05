@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
 	myJS.init();
 
-	terminal.go();
+	terminal.start();
 
 	for (int i = 1; i < argc; i++) {
 		myJS.load(argv[i]);

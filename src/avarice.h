@@ -21,6 +21,9 @@
 #ifndef INCLUDE_AVARICE_H
 #define INCLUDE_AVARICE_H
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 #include <stdarg.h>
 #include <inttypes.h>
 
@@ -39,11 +42,17 @@ extern bool ignoreInterrupts;
     Error message is sent via statusOut and gdbOut **/
 void check(bool ok, const char *fmt, ...);
 
+#define SYSCALL_CHECK(call) { \
+  int _ret = call; \
+  unixCheck(_ret, TOSTRING(call) ": %s", strerror(_ret)); \
+  }
+
 /** Abort program with error message 'fmt, ...' if status < 0. 
     Error message also includes error indicated by 'errno'
 
     Error message is sent via statusOut and gdbOut **/
 void unixCheck(int status, const char *fmt, ...);
+void unixCheck(int status);
 
 
 #endif // INCLUDE_AVARICE_H
