@@ -131,11 +131,12 @@ bool JavaScript::load(const char *filename) {
 	if (!script) {
 		ok = JS_FALSE;
 	} else {
+		char realpathbuf[4096];
+		char *name = realpath(filename, realpathbuf);
+		CONSOLE_PRINTF("loading file \"%s\"\n", name ? name : filename);
 		if (ptr && dir) {
 			chdir(dir);
 		}
-		char realpathbuf[4096];
-		CONSOLE_PRINTF("loading file \"%s\"\n", realpath(filename, realpathbuf));
 		ok = JS_ExecuteScript(cx, global, script, &result);
 		JS_DestroyScript(cx, script);
 		if (ptr && dir) {

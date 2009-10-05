@@ -25,6 +25,7 @@
 #ifndef JTAG_H
 #define JTAG_H
 
+#include <inttypes.h>
 #include <sys/types.h>
 #include <termios.h>
 
