@@ -33,19 +33,30 @@ int TerminalIOClass::readlinePoll() {
   while (terminalIO->inputQueue.isDataAvailable()) {
     const string *str = terminalIO->inputQueue.getData();
     char buf[TERMINAL_BUF_SIZE];
+
+		bool isNewline = false;
     if (rl_point > 0) {
       snprintf(buf, sizeof(buf), "...\n\n%s", str->c_str());
     } else {
       snprintf(buf, sizeof(buf), "\r%s", str->c_str());
     }
-    
+
+		for (int i = 0; i < strlen(buf); i++) {
+			if (buf[i] == '\n') {
+				isNewline = true;
+				break;
+			}
+		}
+		
     printf("%s", buf);
 
 		delete str;
 
 		fflush(stdout);
-		rl_on_new_line();
-		rl_redisplay();
+		if (isNewline) {
+			rl_on_new_line();
+			rl_redisplay();
+		}
 	}
 	
 		

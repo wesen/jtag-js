@@ -200,6 +200,7 @@ void JavaScript::eval(const std::string &str) {
 			char *ptr = JS_GetStringBytes(str);
 			unsigned int numBytes = strlen(ptr);
 			const unsigned int bufLen = TERMINAL_BUF_SIZE - 5;
+
 			for (int i = 0; i < numBytes; i += bufLen) {
 				int end = std::min(numBytes, numBytes + bufLen);
 				char c = ptr[end];
