@@ -1,0 +1,14 @@
+load("prototype/lang.js");
+load("prototype/lang/class.js");
+load("prototype/lang/object.js");
+load("prototype/lang/function.js");
+load("prototype/lang/date.js");
+load("prototype/lang/regexp.js");
+load("prototype/lang/enumerable.js");
+load("prototype/lang/array.js");
+load("prototype/lang/string.js");
+load("prototype/lang/template.js");
+load("prototype/lang/hash.js");
+load("prototype/lang/number.js");
+load("prototype/lang/range.js");
+load("prototype/lang/periodical_executer.js");
