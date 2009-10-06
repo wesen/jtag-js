@@ -1,0 +1,6 @@
+- implement lineloc code for dwarf
+- refactor breakpoint implementation
+- add callback functions on breakpoints
+- RAII code for mutexes and sockets
+- check for blocking on mutex *and* IO
+- make abstraction of debugged device to plan for integration of simulator
