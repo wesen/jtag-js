@@ -10,7 +10,34 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 
+#include <vector>
+
+#include "select.hh"
 #include "thread.hh"
+#include "terminal-io.hh"
+
+class TCPClient : public ThreadedClass, public LineIOClass {
+ protected:
+  int fd;
+	struct sockaddr_in name;
+	FDSelect fds;
+
+ public:
+  ThreadSafeQueue<std::string> inputQueue;
+  ThreadSafeQueue<std::string> outputQueue;
+
+  TCPClient(int _fd, struct sockaddr_in *name);
+
+  virtual ~TCPClient();
+
+ protected:
+  virtual void doWork();
+
+public:
+	void print(const std::string &str);
+	bool isDataAvailable();
+	const string *getData();
+};
 
 class TCPServer : public ThreadedClass {
 public:
@@ -21,8 +48,15 @@ public:
 	static int makeSocket(struct sockaddr_in *name, uint16_t port);
 	
  protected:
+	char hostname[256];
   uint16_t port;
+
+	static const int MAX_CLIENTS = 16;
+
   int fd;
+	struct sockaddr_in name;
+
+	FDSelect fds;
 
  public:
   TCPServer(const char *hostname, uint16_t port);
@@ -31,19 +65,6 @@ public:
 
   virtual void start();
   virtual void stop();
-
- protected:
-  virtual void doWork();
-};
-
-class TCPClient : public ThreadedClass {
- protected:
-  int fd;
-
- public:
-  TCPClient(int _fd);
-
-  virtual ~TCPClient();
 
  protected:
   virtual void doWork();

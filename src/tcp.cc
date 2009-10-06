@@ -1,6 +1,7 @@
-#include "avarice.h"
-
+#include <list>
 #include <string.h>
+
+#include "avarice.h"
 
 #include "tcp.hh"
 
@@ -49,4 +50,3 @@ int TCPServer::makeSocket(struct sockaddr_in *name, uint16_t port)
 
 	return sock;
 }
-

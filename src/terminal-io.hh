@@ -8,13 +8,24 @@
 
 #define TERMINAL_BUF_SIZE 4096
 
+void printListeners(const char *buf);
+
 #define CONSOLE_PRINTF(fmt...) { \
 		char buf[TERMINAL_BUF_SIZE];	 \
 		snprintf(buf, sizeof(buf), fmt);		 \
-		TerminalIOClass::printTerminal(buf); \
+		printListeners(buf); \
 }
 
-class TerminalIOClass : public ThreadedClass {
+//		TerminalIOClass::printTerminal(buf);			\
+
+class LineIOClass {
+public:
+  virtual void print(const std::string &str) = 0;
+  virtual bool isDataAvailable()             = 0;
+  virtual const string *getData()            = 0;
+};
+
+class TerminalIOClass : public ThreadedClass, public LineIOClass {
 public:
   ThreadSafeQueue<std::string> inputQueue;
   ThreadSafeQueue<std::string> outputQueue;

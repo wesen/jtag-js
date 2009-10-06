@@ -20,6 +20,11 @@ public:
 	virtual void debugOut(const char *fmt, ...);
 	virtual void debugFlush();
 
+	/** printf 'fmt, ...' **/
+	virtual void vErrorOut(const char *fmt, va_list args);
+	virtual void errorOut(const char *fmt, ...);
+	virtual void errorFlush();
+
 	/** printf 'fmt, ...' to status file descriptor (currently stdout) **/
 	virtual void vStatusOut(const char *fmt, va_list args);
 	virtual void statusOut(const char *fmt, ...);

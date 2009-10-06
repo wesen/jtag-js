@@ -30,6 +30,21 @@ void Console::debugFlush() {
 	}
 }
 
+void Console::vErrorOut(const char *fmt, va_list args) {
+	vfprintf(stderr, fmt, args);
+}
+
+void Console::errorOut(const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	vErrorOut(fmt, args);
+	va_end(args);
+}
+
+void Console::errorFlush() {
+	fflush(stderr);
+}
+
 void Console::vStatusOut(const char *fmt, va_list args) {
 	vprintf(fmt, args);
 }

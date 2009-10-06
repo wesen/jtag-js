@@ -115,5 +115,6 @@ manuel_SOURCES =	\
 	dwarfnaming.hh \
 	dwarfnaming.cc \
 	tcp.cc \
+	tcp2.cc \
 	tcp.hh
 

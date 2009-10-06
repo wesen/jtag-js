@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <signal.h>
+#include <list>
 
 #include "avarice.h"
 
@@ -9,7 +10,12 @@
 #include "js.hh"
 
 #include <readline/readline.h>
+
+#include "thread.hh"
 #include "terminal-io.hh"
+#include "tcp.hh"
+
+using namespace std;
 
 TerminalIOClass terminal;
 JavaScript myJS;
@@ -22,6 +28,21 @@ void signal_handler(int signal) {
 	terminal.stop();
 }
 
+ThreadSafeList<LineIOClass *> listeners;
+
+void printListeners(const char *buf) {
+	list<LineIOClass *> *l = listeners.getLockedObject();
+
+	for (list<LineIOClass *>::iterator it = l->begin();
+			 it != l->end();
+			 it++) {
+		LineIOClass *io = *it;
+		//		printf("print %s to %p\n", buf, io);
+		io->print(buf);
+	}
+	listeners.unlock();
+}
+
 int main(int argc, char *argv[]) {
 	Console mainConsole;
 	console = &mainConsole;
@@ -32,10 +53,14 @@ int main(int argc, char *argv[]) {
 	myJS.init();
 
 	terminal.start();
+	listeners.push_front(&terminal);
 
 	for (int i = 1; i < argc; i++) {
 		myJS.load(argv[i]);
 	}
+
+	TCPServer server("localhost", 8181);
+	server.start();
 	
 	for (;;) {
 		bool interrupt = false;
@@ -51,11 +76,20 @@ int main(int argc, char *argv[]) {
 			break;
 		}
 
-	  if (terminal.isDataAvailable()) {
-	    const string *str = terminal.getData();
-			myJS.eval(*str);
-	    delete str;
+		/* locked listeners section */
+		list<LineIOClass *> *l = listeners.getLockedObject();
+		for (list<LineIOClass *>::iterator it = l->begin();
+				 it != l->end();
+				 it++) {
+			LineIOClass *io = *it;
+			while (io->isDataAvailable()) {
+				const string *str = io->getData();
+				// XXX get result as string
+				myJS.eval(*str);
+				delete str;
+			}
 	  }
+		listeners.unlock();
 	}
 	printf("cleaning up...\n");
 	rl_cleanup_after_signal();

@@ -18,9 +18,6 @@ TerminalIOClass::TerminalIOClass(const char *name) {
 TerminalIOClass::~TerminalIOClass() {
 }
 
-void TerminalIOClass::print(const string &str) {
-  inputQueue.putData(str);
-}
 
 TerminalIOClass *TerminalIOClass::terminalIO = NULL;
 
@@ -78,6 +75,10 @@ void TerminalIOClass::doWork() {
 
 bool TerminalIOClass::isDataAvailable() {
   return outputQueue.isDataAvailable();
+}
+
+void TerminalIOClass::print(const string &str) {
+  inputQueue.putData(str);
 }
 
 const string *TerminalIOClass::getData() {

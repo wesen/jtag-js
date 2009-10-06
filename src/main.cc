@@ -247,9 +247,6 @@ jtag *theJtagICE;
 
 int main(int argc, char **argv)
 {
-	int sock;
-	struct sockaddr_in clientname;
-	struct sockaddr_in name;
 	char *inFileName = 0;
 	const char *jtagDeviceName = NULL;
 	char *device_name = 0;
@@ -597,6 +594,9 @@ int main(int argc, char **argv)
 		theJtagICE->resumeProgram();
 	else
     {
+			int sock;
+			struct sockaddr_in name;
+
 			TCPServer::initSocketAddress(&name, hostName, hostPortNumber);
 			sock = TCPServer::makeSocket(&name, hostPortNumber);
 
@@ -614,6 +614,7 @@ int main(int argc, char **argv)
         }
 
 			// Connection request on original socket.
+			struct sockaddr_in clientname;
 			socklen_t size = (socklen_t)sizeof(clientname);
 			int gfd = accept(sock, (struct sockaddr *)&clientname, &size);
 			unixCheck(gfd);

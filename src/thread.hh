@@ -6,8 +6,11 @@
 
 #include <string>
 #include <queue>
+#include <list>
 
 using namespace std;
+
+// #define DEBUG
 
 #ifdef DEBUG
 #define DEBUG_PRINTF(str, args...) \
@@ -21,12 +24,14 @@ protected:
   pthread_mutex_t mutex;
   pthread_cond_t cond;
   pthread_t owner;
+	int level;
 
 public:
   ThreadSynchronization() {
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, NULL);
     owner = (pthread_t)-1;
+		level = 0;
   }
 
   virtual ~ThreadSynchronization() {
@@ -37,14 +42,22 @@ public:
   void lock() {
     DEBUG_PRINTF("lock %p from thread %d\n", this, pthread_self);
     pthread_mutex_lock(&mutex);
-    owner = pthread_self();
+		level++;
+		if (owner != (pthread_t)-1) {
+			assert(owner == pthread_self());
+		} else {
+			owner = pthread_self();
+		}
   }
 
   void unlock() {
     DEBUG_PRINTF("unlock %p from thread %d (owner: %d)\n", this, pthread_self, owner);
     assert(owner == pthread_self());
-    owner = (pthread_t)-1;
-    pthread_mutex_unlock(&mutex);
+		level--;
+		if (level == 0) {
+			owner = (pthread_t)-1;
+			pthread_mutex_unlock(&mutex);
+		}
   }
 
   void wait() {
@@ -145,6 +158,27 @@ public:
     q->push(data);
     ThreadSafeObject<queue<C> >::unlock();
   }
+};
+
+template<class C> class ThreadSafeList : public ThreadSafeObject<list<C> > {
+protected:
+	list<C> myList;
+
+public:
+	ThreadSafeList() : ThreadSafeObject<list<C> > (&myList) {
+	}
+
+	void remove(const C &c) {
+		list<C> *l = ThreadSafeObject<list<C> >::getLockedObject();
+		l->remove(c);
+		ThreadSafeObject<list<C> >::unlock();
+	}
+
+	void push_front(const C &c) {
+		list<C> *l = ThreadSafeObject<list<C> >::getLockedObject();
+		l->push_front(c);
+		ThreadSafeObject<list<C> >::unlock();
+	}
 };
 
 #endif /* THREAD_H__ */
