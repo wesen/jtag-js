@@ -64,8 +64,8 @@ TCPClient::TCPClient(int _fd, struct sockaddr_in *_name) {
 	memcpy(&name, _name, sizeof(name));
 	fds.add(fd);
 	listeners.push_front(this); // XXX race condition
-	const char *welcomeMessage = "Welcome to AvariceJS\n";
-	write(fd, welcomeMessage, strlen(welcomeMessage));
+	line.clear();
+	print("Welcome to AvariceJS\n");
 }
 
 TCPClient::~TCPClient() {
@@ -76,6 +76,7 @@ TCPClient::~TCPClient() {
 
 void TCPClient::doWork() {
 	while (!stopRequested) {
+		bool written = false;
 		while (inputQueue.isDataAvailable()) {
 			const string *str = inputQueue.getData();
 			const char *ptr = str->c_str();
@@ -94,6 +95,13 @@ void TCPClient::doWork() {
 				delete this;
 				return;
 			}
+
+			written = true;
+		}
+
+		if (written) {
+			const char *str = "repl> ";
+			write(fd, str, strlen(str));
 		}
 
 		fds.waitRead(10);
@@ -107,7 +115,12 @@ void TCPClient::doWork() {
 				return;
 			} else {
 				buf[len] = 0;
-				printf("read %s\n", buf);
+				line += string(buf);
+				ssize_t pos = line.find_last_of('\n');
+				if (pos != string::npos) {
+					outputQueue.putData(line.substr(0, pos));
+					line.erase(0, pos);
+				}
 			}
 		}
 	}

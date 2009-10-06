@@ -18,17 +18,28 @@
 using namespace std;
 
 TerminalIOClass terminal;
+TCPServer server("localhost", 8181);
 JavaScript myJS;
 
 JavaScript *theJS = &myJS;
 jtag *theJtagICE = NULL;
 
+ThreadSafeList<LineIOClass *> listeners;
+
 void signal_handler(int signal) {
 	printf("SIGINT\n");
-	terminal.stop();
-}
+	server.stop();
+	list<LineIOClass *> *l = listeners.getLockedObject();
 
-ThreadSafeList<LineIOClass *> listeners;
+	for (list<LineIOClass *>::iterator it = l->begin();
+			 it != l->end();
+			 it++) {
+		ThreadedClass *io = (ThreadedClass *)*it;
+		// xXX igitt hackk hackk
+		io->stop();
+	}
+	listeners.unlock();
+}
 
 void printListeners(const char *buf) {
 	list<LineIOClass *> *l = listeners.getLockedObject();
@@ -60,7 +71,6 @@ int main(int argc, char *argv[]) {
 		myJS.load(argv[i]);
 	}
 
-	TCPServer server("localhost", 8181);
 	server.start();
 	
 	for (;;) {

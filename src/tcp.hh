@@ -10,6 +10,7 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 
+#include <string>
 #include <vector>
 
 #include "select.hh"
@@ -21,6 +22,7 @@ class TCPClient : public ThreadedClass, public LineIOClass {
   int fd;
 	struct sockaddr_in name;
 	FDSelect fds;
+	std::string line;
 
  public:
   ThreadSafeQueue<std::string> inputQueue;
