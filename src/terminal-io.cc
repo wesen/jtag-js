@@ -26,7 +26,7 @@ int TerminalIOClass::readlinePoll() {
 		rl_done = 1;
 		return 0;
 	}
-	
+
   while (terminalIO->inputQueue.isDataAvailable()) {
     const string *str = terminalIO->inputQueue.getData();
     char buf[TERMINAL_BUF_SIZE];

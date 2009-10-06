@@ -37,11 +37,12 @@ void printListeners(const char *buf) {
 			 it != l->end();
 			 it++) {
 		LineIOClass *io = *it;
-		//		printf("print %s to %p\n", buf, io);
 		io->print(buf);
 	}
 	listeners.unlock();
 }
+
+bool ThreadSynchronization::debug = false;
 
 int main(int argc, char *argv[]) {
 	Console mainConsole;

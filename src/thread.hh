@@ -10,11 +10,11 @@
 
 using namespace std;
 
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define DEBUG_PRINTF(str, args...) \
-  printf(str, ## args)
+  if (ThreadSynchronization::debug) printf(str, ## args)
 #else
 #define DEBUG_PRINTF(stder, args...)
 #endif
@@ -27,6 +27,8 @@ protected:
 	int level;
 
 public:
+	static bool debug;
+
   ThreadSynchronization() {
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, NULL);
@@ -40,8 +42,18 @@ public:
   }
 
   void lock() {
-    DEBUG_PRINTF("lock %p from thread %d\n", this, pthread_self);
+    DEBUG_PRINTF("lock %p from thread %p (owner: %p, level %d)\n", this, pthread_self(), owner, level);
+
+#ifdef __APPLE__
+		/* apparently can't relock an already self owned lock */
+		if (owner == pthread_self()) {
+			level++;
+			return;
+		}
+#endif
+		
     pthread_mutex_lock(&mutex);
+		DEBUG_PRINTF("acquired lock %p from thread %p\n", this, pthread_self());
 		level++;
 		if (owner != (pthread_t)-1) {
 			assert(owner == pthread_self());
@@ -51,7 +63,7 @@ public:
   }
 
   void unlock() {
-    DEBUG_PRINTF("unlock %p from thread %d (owner: %d)\n", this, pthread_self, owner);
+    DEBUG_PRINTF("unlock %p from thread %p (owner: %p, level: %d)\n", this, pthread_self(), owner, level);
     assert(owner == pthread_self());
 		level--;
 		if (level == 0) {
@@ -61,13 +73,13 @@ public:
   }
 
   void wait() {
-    DEBUG_PRINTF("wait %p from thread %d (owner: %d)\n", this, pthread_self, owner);
+    DEBUG_PRINTF("wait %p from thread %p (owner: %p)\n", this, pthread_self(), owner);
     assert(owner == pthread_self());
     pthread_cond_wait(&cond, &mutex);
   }
   
   void signal() {
-    DEBUG_PRINTF("signal %p from thread %d (owner: %d)\n", this, pthread_self, owner);
+    DEBUG_PRINTF("signal %p from thread %p (owner: %p)\n", this, pthread_self(), owner);
     assert(owner == pthread_self());
     pthread_cond_signal(&cond);
   }

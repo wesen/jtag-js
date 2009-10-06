@@ -102,7 +102,7 @@ void TCPClient::doWork() {
 			char buf[256];
 			int len = read(fd, buf, sizeof(buf));
 			if (len <= 0) {
-				console->errorOut("Error while writing %d bytes: %s\n", strerror(len));
+				console->errorOut("Error while reading:: %s\n", strerror(len));
 				delete this;
 				return;
 			} else {
