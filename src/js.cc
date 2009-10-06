@@ -179,38 +179,32 @@ bool JavaScript::init() {
 	return true;
 }
 
-void JavaScript::eval(const std::string &str) {
+const string *JavaScript::eval(const std::string &str) {
 	const char *src = str.c_str();
 	jsval rval;
 
 	JSBool ret = JS_EvaluateScript(cx, JS_GetGlobalObject(cx), src, strlen(src), __FILE__, __LINE__, &rval);
 
 	if (!ret) {
-		return;
+		return new string("could not evaluate script");
 	} else {
 		// call uneval
 		jsval r;
 		if (!JS_CallFunctionName(cx, JS_GetGlobalObject(cx), "uneval", 1,
 														 &rval, &r)) {
 			JS_ReportError(cx, "Could not uneval evaluation result");
+			return NULL;
 		}
 		
 		JSString *str = JSVAL_TO_STRING(r);
 		if (str != NULL) {
 			char *ptr = JS_GetStringBytes(str);
 			unsigned int numBytes = strlen(ptr);
-			const unsigned int bufLen = TERMINAL_BUF_SIZE - 5;
-
-			for (int i = 0; i < numBytes; i += bufLen) {
-				int end = std::min(numBytes, numBytes + bufLen);
-				char c = ptr[end];
-				ptr[end] = '\0';
-				CONSOLE_PRINTF("%s", ptr + i);
-				ptr[end] = c;
-			}
-			CONSOLE_PRINTF("\n");
+			string *res = new string(ptr);
+			*res += string("\n");
+			return res;
 		} else {
-			TerminalIOClass::printTerminal("<undefined>\n");
+			return new string("<undefined>\n");
 		}
 	}
 }

@@ -85,9 +85,11 @@ int main(int argc, char *argv[]) {
 			LineIOClass *io = *it;
 			while (io->isDataAvailable()) {
 				const string *str = io->getData();
-				// XXX get result as string
-				myJS.eval(*str);
+				const string *res = myJS.eval(*str);
 				delete str;
+
+				io->print(*res);
+				delete res;
 			}
 	  }
 		listeners.unlock();

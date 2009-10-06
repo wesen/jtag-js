@@ -44,7 +44,7 @@ public:
 	bool load(const char *filename);
 
 	bool init();
-	void eval(const std::string &str);
+	const std::string *eval(const std::string &str);
 };
 
 extern JavaScript *theJS;
