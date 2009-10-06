@@ -568,8 +568,83 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
 	dwarf_dealloc(dbg, attrs, DW_DLA_LIST);
 }
 
+jsval DwarfFile::dwarfLine(Dwarf_Line line) {
+	JSObject *lineObj = JS_NEW_OBJECT(cx);
+
+	char *filename = NULL;
+	int sres = dwarf_linesrc(line, &filename, &error);
+	DWARF_CHECK(sres, "dwarf_linesrc");
+	if (sres == DW_DLV_NO_ENTRY) {
+		filename = (char *)"<unknown>";
+	}
+	JS_SET_PROPERTY_STRING(lineObj, "filename", filename);
+	if (sres == DW_DLV_OK) {
+		dwarf_dealloc(dbg, filename, DW_DLA_STRING);
+	}
+
+	Dwarf_Addr pc;
+	int ares = dwarf_lineaddr(line, &pc, &error);
+	DWARF_CHECK(ares, "dwarf_lineaddr");
+	if (ares == DW_DLV_OK) {
+		JS_SET_PROPERTY_INT(lineObj, "pc", pc);
+	}
+
+	Dwarf_Unsigned lineno;
+	int res = dwarf_lineno(line, &lineno, &error);
+	DWARF_CHECK(res, "dwarf_lineno");
+	if (res == DW_DLV_NO_ENTRY) {
+		JS_SET_PROPERTY_INT(lineObj, "lineno", -1);
+	} else {
+		JS_SET_PROPERTY_INT(lineObj, "lineno", lineno);
+	}
+
+	Dwarf_Signed column;
+	res = dwarf_lineoff(line, &column, &error);
+	DWARF_CHECK(res, "dwarf_lineoff");
+	if (res == DW_DLV_NO_ENTRY) {
+		column = -1;
+	}
+	JS_SET_PROPERTY_INT(lineObj, "column", column);
+
+	Dwarf_Bool newstatement;
+	res = dwarf_linebeginstatement(line, &newstatement, &error);
+	DWARF_CHECK(res, "dwarf_linebeginstatement");
+	JS_SET_PROPERTY_BOOLEAN(lineObj, "beginStatement", newstatement);
+
+	Dwarf_Bool newblock;
+	res = dwarf_lineblock(line, &newblock, &error);
+	DWARF_CHECK(res, "dwarf_lineblock");
+	JS_SET_PROPERTY_BOOLEAN(lineObj, "beginBlock", newblock);
+
+	Dwarf_Bool endsequence;
+	res = dwarf_lineendsequence(line, &endsequence, &error);
+	DWARF_CHECK(res, "dwarf_lineendsequence");
+	JS_SET_PROPERTY_BOOLEAN(lineObj, "endSequence", endsequence);
+	
+	return OBJECT_TO_JSVAL(lineObj);
+}
+
 void DwarfFile::dwarfDieLines(JSObject *dieObj, Dwarf_Die die) {
-	//	DWARF_UNIMPLEMENTED("dwarfDieLines");
+	JSObject *linesObj = JS_NEW_ARRAY(cx);
+	
+	Dwarf_Line *linebuf;
+	Dwarf_Signed linecount;
+	
+	int res = dwarf_srclines(die, &linebuf, &linecount, &error);
+	DWARF_CHECK(res, "dwarf_srclines");
+	if (res == DW_DLV_NO_ENTRY) {
+		return;
+	}
+
+	for (int i = 0; i < linecount; i++) {
+		Dwarf_Line line = linebuf[i];
+		jsval lineVal = dwarfLine(line);
+		JS_SetElement(cx, linesObj, i, &lineVal);
+	}
+
+	dwarf_srclines_dealloc(dbg, linebuf, linecount);
+
+	JS_SET_PROPERTY_OBJECT(dieObj, "line", linesObj);
 }
 
 /* dwarf die */

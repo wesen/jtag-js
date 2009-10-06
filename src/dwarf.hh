@@ -57,6 +57,9 @@ public:
 	jsval dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribute attr);
 	jsval dwarfAttributeValue(Dwarf_Attribute attr);
 
+	/* dwarf lines */
+	jsval dwarfLine(Dwarf_Line line);
+	
 	/* dwarf die */
 	void dwarfDieData(JSObject *dieObj, Dwarf_Die die);
 	void dwarfDieLines(JSObject *dieObj, Dwarf_Die die);

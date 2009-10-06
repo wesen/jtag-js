@@ -29,23 +29,25 @@ int TerminalIOClass::readlinePoll() {
 
   while (terminalIO->inputQueue.isDataAvailable()) {
     const string *str = terminalIO->inputQueue.getData();
-    char buf[TERMINAL_BUF_SIZE];
+		uint16_t len = str->length();
 
 		bool isNewline = false;
     if (rl_point > 0) {
-      snprintf(buf, sizeof(buf), "...\n\n%s", str->c_str());
+			printf("...\n\n");
+			isNewline = true;
     } else {
-      snprintf(buf, sizeof(buf), "\r%s", str->c_str());
+			printf("\r");
     }
 
-		for (int i = 0; i < strlen(buf); i++) {
-			if (buf[i] == '\n') {
+		const char *ptr = str->c_str();
+
+		for (int i = 0; i < len; i++) {
+			if (ptr[i] == '\n') {
 				isNewline = true;
 				break;
 			}
 		}
-		
-    printf("%s", buf);
+		printf("%s", str->c_str());
 
 		delete str;
 
