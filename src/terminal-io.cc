@@ -18,7 +18,7 @@ TerminalIOClass::TerminalIOClass(const char *name) {
 TerminalIOClass::~TerminalIOClass() {
 }
 
-
+LineIOClass *TerminalIOClass::currentIO;
 TerminalIOClass *TerminalIOClass::terminalIO = NULL;
 
 int TerminalIOClass::readlinePoll() {

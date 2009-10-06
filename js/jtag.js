@@ -1,6 +1,7 @@
 load("helpers.js");
 load("prototype.js");
 load("dwarf.js");
+load("repl.js");
 
 // avr specific functions
 

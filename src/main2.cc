@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
 				 it++) {
 			LineIOClass *io = *it;
 			while (io->isDataAvailable()) {
+				TerminalIOClass::currentIO = io;
 				const string *str = io->getData();
 				const string *res = myJS.eval(*str);
 				delete str;

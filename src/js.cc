@@ -186,7 +186,8 @@ const string *JavaScript::eval(const std::string &str) {
 	JSBool ret = JS_EvaluateScript(cx, JS_GetGlobalObject(cx), src, strlen(src), __FILE__, __LINE__, &rval);
 
 	if (!ret) {
-		return new string("could not evaluate script");
+		JS_ReportError(cx, "Could not evaluate script");
+		return new string("<error>\n");
 	} else {
 		// call uneval
 		jsval r;

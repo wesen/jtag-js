@@ -30,10 +30,11 @@ public:
   ThreadSafeQueue<std::string> inputQueue;
   ThreadSafeQueue<std::string> outputQueue;
 
+	static LineIOClass *currentIO;
   static TerminalIOClass *terminalIO;
 	static void printTerminal(const std::string &str) {
-		if (terminalIO != NULL) {
-			terminalIO->print(str);
+		if (currentIO != NULL) {
+			currentIO->print(str);
 		}
 	}
 

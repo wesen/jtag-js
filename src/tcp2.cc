@@ -118,7 +118,9 @@ void TCPClient::doWork() {
 				line += string(buf);
 				ssize_t pos = line.find_last_of('\n');
 				if (pos != string::npos) {
-					outputQueue.putData(line.substr(0, pos));
+					string gotStr = line.substr(0, pos);
+					//					printf("got str |%s|\n", gotStr.c_str());
+					outputQueue.putData(gotStr);
 					line.erase(0, pos);
 				}
 			}
