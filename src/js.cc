@@ -179,14 +179,21 @@ bool JavaScript::init() {
 	return true;
 }
 
+bool JavaScript::isCompilable(const std::string &str) {
+	return JS_BufferIsCompilableUnit(cx, JS_GetGlobalObject(cx),
+																	 str.c_str(), str.length());
+}
+
 const string *JavaScript::eval(const std::string &str) {
 	const char *src = str.c_str();
 	jsval rval;
 
-	JSBool ret = JS_EvaluateScript(cx, JS_GetGlobalObject(cx), src, strlen(src), __FILE__, __LINE__, &rval);
+	JSBool ret = JS_EvaluateScript(cx, JS_GetGlobalObject(cx),
+																 src, strlen(src),
+																 __FILE__, __LINE__, &rval);
 
 	if (!ret) {
-		JS_ReportError(cx, "Could not evaluate script");
+		JS_ReportError(cx, "Could not evaluate script :\n|%s|\n", src);
 		return new string("<error>\n");
 	} else {
 		// call uneval

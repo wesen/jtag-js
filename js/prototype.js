@@ -1,3 +1,4 @@
+load("prototype/prototype.js");
 load("prototype/lang.js");
 load("prototype/lang/class.js");
 load("prototype/lang/object.js");

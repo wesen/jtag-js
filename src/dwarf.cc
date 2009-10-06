@@ -644,7 +644,7 @@ void DwarfFile::dwarfDieLines(JSObject *dieObj, Dwarf_Die die) {
 
 	dwarf_srclines_dealloc(dbg, linebuf, linecount);
 
-	JS_SET_PROPERTY_OBJECT(dieObj, "line", linesObj);
+	JS_SET_PROPERTY_OBJECT(dieObj, "lines", linesObj);
 }
 
 /* dwarf die */

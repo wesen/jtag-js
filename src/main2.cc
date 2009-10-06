@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <list>
+#include <map>
 
 #include "avarice.h"
 
@@ -25,6 +26,7 @@ JavaScript *theJS = &myJS;
 jtag *theJtagICE = NULL;
 
 ThreadSafeList<LineIOClass *> listeners;
+map<LineIOClass *, string *> listenerBufs;
 
 void signal_handler(int signal) {
 	printf("SIGINT\n");
@@ -93,14 +95,24 @@ int main(int argc, char *argv[]) {
 				 it != l->end();
 				 it++) {
 			LineIOClass *io = *it;
+
 			while (io->isDataAvailable()) {
 				TerminalIOClass::currentIO = io;
-				const string *str = io->getData();
-				const string *res = myJS.eval(*str);
-				delete str;
+				string *buf = listenerBufs[io];
+				if (buf == NULL) {
+					buf = listenerBufs[io] = new string();
+				}
 
-				io->print(*res);
-				delete res;
+				const string *str = io->getData();
+				*buf += *str;
+				delete str;
+					
+				if (myJS.isCompilable(*buf)) {
+					const string *res = myJS.eval(*buf);
+					buf->clear();
+					io->print(*res);
+					delete res;
+				}
 			}
 	  }
 		listeners.unlock();
