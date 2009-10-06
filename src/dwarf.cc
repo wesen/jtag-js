@@ -17,14 +17,16 @@
 #include "dwarf.hh"
 
 // #define DWARF_UNIMPLEMENTED() throw DwarfException()
+#define DWARF_THROW(str) \
+	throw (str " in file " __FILE__ " at line " TOSTRING(__LINE__))
+
 #define DWARF_UNIMPLEMENTED(name) \
-	throw (name ": unimplemented in file " __FILE__ " at line " TOSTRING(__LINE__))
+	DWARF_THROW(name ": unimplemented")
 
 #define DWARF_CHECK(res, str)																		\
 	if ((res) == DW_DLV_ERROR) { \
-	   throw (str ": got dwarf error in file " __FILE__	\
-						" at line " TOSTRING(__LINE___)); \
-	}
+		DWARF_THROW(str ": got dwarf error");				\
+		}
 
 DwarfFile::DwarfFile(JSContext *_cx, JSObject *_obj, const char *_filename) :
 	cx(_cx), obj(_obj), filename(_filename) {
@@ -36,7 +38,7 @@ DwarfFile::~DwarfFile() {
 jsval DwarfFile::getSmallEncodingIntegerName(Dwarf_Attribute attr,
 																						 const char *attr_name,
 																						 encoding_type_func val_as_string) {
-	JSObject *attrValueObj = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *attrValueObj = JS_NEW_OBJECT(cx);
 	jsval attrValueVal = OBJECT_TO_JSVAL(attrValueObj);
 
 	Dwarf_Unsigned uval;
@@ -47,32 +49,105 @@ jsval DwarfFile::getSmallEncodingIntegerName(Dwarf_Attribute attr,
 }
 
 jsval DwarfFile::dwarfLocationList(Dwarf_Attribute attr) {
-	DWARF_UNIMPLEMENTED("dwarfLocationList");
+	Dwarf_Locdesc **llbufarray;
+	Dwarf_Signed cnt;
+	int res = dwarf_loclist_n(attr, &llbufarray, &cnt, &error);
+	DWARF_CHECK(res, "dwarf_loclist_n");
+
+	JSObject *locListObj = JS_NEW_ARRAY(cx);
+	
+	for (int i = 0; i < cnt; i++) {
+		Dwarf_Locdesc *llbuf = llbufarray[i];
+
+		jsval locVal = dwarfLocDesc(llbuf);
+		JS_SetElement(cx, locListObj, i, &locVal);
+
+		dwarf_dealloc(dbg, llbuf, DW_DLA_LOCDESC);
+	}
+
+	dwarf_dealloc(dbg, llbufarray, DW_DLA_LIST);
+
+	return OBJECT_TO_JSVAL(locListObj);
 }
 
-jsval DwarfFile::dwarfLocation(Dwarf_Loc *loc) {
-	DWARF_UNIMPLEMENTED("dwarfLocation");
+jsval DwarfFile::dwarfLocDesc(Dwarf_Locdesc *locDesc) {
+	JSObject *locDescObj = JS_NEW_ARRAY(cx);
+
+	JS_SET_PROPERTY_INT(locDescObj, "lowpc", locDesc->ld_lopc);
+	JS_SET_PROPERTY_INT(locDescObj, "highpc", locDesc->ld_hipc);
+
+	for (int i = 0; i < locDesc->ld_cents; i++) {
+		Dwarf_Loc *expr = &(locDesc->ld_s[i]);
+
+		jsval locVal = dwarfLocation(expr);
+		JS_SetElement(cx, locDescObj, i, &locVal);
+	}
+
+	return OBJECT_TO_JSVAL(locDescObj);
 }
 
-jsval DwarfFile::dwarfOpAddr(Dwarf_Unsigned opd) {
-	DWARF_UNIMPLEMENTED("dwarfOpAddr");
-}
+jsval DwarfFile::dwarfLocation(Dwarf_Loc *expr) {
+	JSObject *exprObj = JS_NEW_OBJECT(cx);
+	
+	Dwarf_Small op = expr->lr_atom;
+	JS_SET_PROPERTY_INT(exprObj, "op", op);
+	if (op > DW_OP_nop) {
+		DWARF_THROW("unsupported op");
+	}
+	const char *op_name = get_OP_name(op);
+	JS_SET_PROPERTY_STRING(exprObj, "opName", op_name);
+	
+	Dwarf_Unsigned opd1 = expr->lr_number;
+	Dwarf_Unsigned opd2 = expr->lr_number2;
 
-jsval DwarfFile::dwarfOpSigned(Dwarf_Unsigned opd) {
-	DWARF_UNIMPLEMENTED("dwarfOpSigned");
-}
+	if ((op >= DW_OP_breg0) && (op <= DW_OP_breg31)) {
+		JS_SET_PROPERTY_INT(exprObj, "opd1", opd1);
+	} else {
+		switch (op) {
+		case DW_OP_addr:
+			JS_SET_PROPERTY_INT(exprObj, "opd1", opd1);
+			break;
 
-jsval DwarfFile::dwarfOpUnsigned(Dwarf_Unsigned opd) {
-	DWARF_UNIMPLEMENTED("dwarfOpUnsigned");
-}
+		case DW_OP_const1s:
+		case DW_OP_const2s:
+		case DW_OP_const4s:
+		case DW_OP_consts:
+		case DW_OP_skip:
+		case DW_OP_bra:
+		case DW_OP_fbreg:
+			JS_SET_PROPERTY_INT(exprObj, "opd1", (Dwarf_Signed)opd1);
+			break;
 
-jsval DwarfFile::dwarfOpBreg(Dwarf_Unsigned opd1, Dwarf_Unsigned opd2) {
-	DWARF_UNIMPLEMENTED("dwarfOpBreg");
+		case DW_OP_const1u:
+		case DW_OP_const2u:
+		case DW_OP_const4u:
+		case DW_OP_const8u:
+		case DW_OP_constu:
+		case DW_OP_pick:
+		case DW_OP_plus_uconst:
+		case DW_OP_regx:
+		case DW_OP_piece:
+		case DW_OP_deref_size:
+		case DW_OP_xderef_size:
+			JS_SET_PROPERTY_INT(exprObj, "opd1", opd1);
+			break;
+
+		case DW_OP_bregx:
+			JS_SET_PROPERTY_INT(exprObj, "opd1", opd1);
+			JS_SET_PROPERTY_INT(exprObj, "opd2", (Dwarf_Signed)opd2);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return OBJECT_TO_JSVAL(exprObj);
 }
 
 /* dwarf attribute */
 jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribute attr) {
-	attrObj = JS_NewObject(cx, NULL, NULL, NULL);
+	attrObj = JS_NEW_OBJECT(cx);
 	JS_SET_PROPERTY_OBJECT(attrObj, "parent", attrObj);
 	
 	Dwarf_Half attrNum;
@@ -98,7 +173,7 @@ jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribut
 jsval DwarfFile::dwarfAttributeValue(Dwarf_Attribute attr) {
 	jsval retVal = JSVAL_VOID;
 
-	JSObject *attrValueObj = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *attrValueObj = JS_NEW_OBJECT(cx);
 	jsval attrValueVal = OBJECT_TO_JSVAL(attrValueObj);
 
 	Dwarf_Half form;
@@ -183,7 +258,7 @@ jsval DwarfFile::dwarfAttributeValue(Dwarf_Attribute attr) {
 				break;
 
 			if (form == DW_FORM_block1) {
-				dwarfLocationList(attr);
+				retVal = dwarfLocationList(attr);
 			} else {
 				retVal = dwarfFormValue(attr);
 			}
@@ -347,7 +422,7 @@ jsval DwarfFile::dwarfFormValue(Dwarf_Attribute attr) {
 			Dwarf_Block *tempb;
 			int fres = dwarf_formblock(attr, &tempb, &error);
 			DWARF_CHECK(fres, "dwarf_formblock");
-			JSObject *formArrayObj = JS_NewArrayObject(cx, 0, NULL);
+			JSObject *formArrayObj = JS_NEW_ARRAY(cx);
 			valVal = OBJECT_TO_JSVAL(formArrayObj);
 			
 			for (int i = 0; i < tempb->bl_len; i++) {
@@ -453,7 +528,7 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
 	JS_SET_PROPERTY_INT(dieObj, "cuOffsetLength", cuOffLen);
 
 	/* go through die attributes */
-	JSObject *attrArrayObj = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *attrArrayObj = JS_NEW_ARRAY(cx);
 	JS_SET_PROPERTY_OBJECT(dieObj, "attributes", attrArrayObj);
 
 	Dwarf_Attribute *attrs;
@@ -466,14 +541,14 @@ void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
 				jsval attrVal = dwarfAttribute(dieObj, tag, attrs[i]);
 				JS_SetElement(cx, attrArrayObj, i, &attrVal);
 			} catch (const char *s) {
-				JSObject *attrObj = JS_NewObject(cx, NULL, NULL, NULL);
+				JSObject *attrObj = JS_NEW_OBJECT(cx);
 				jsval attrVal = OBJECT_TO_JSVAL(attrObj);
 
 				JS_SET_PROPERTY_STRING(attrObj, "name", "error");
 				JS_SET_PROPERTY_STRING(attrObj, "type", "error");
 				JS_SET_PROPERTY_INT(attrObj, "num", 0);
 
-				JSObject *attrValObj = JS_NewObject(cx, NULL, NULL, NULL);
+				JSObject *attrValObj = JS_NEW_OBJECT(cx);
 				JS_SET_PROPERTY_STRING(attrValObj, "value", s);
 				JS_SET_PROPERTY_INT(attrValObj, "form", DW_FORM_string);
 				JS_SET_PROPERTY_STRING(attrValObj, "formName", get_FORM_name(DW_FORM_string));
@@ -500,11 +575,11 @@ void DwarfFile::dwarfDieLines(JSObject *dieObj, Dwarf_Die die) {
 /* dwarf die */
 jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
 	//	DWARF_UNIMPLEMENTED("dwarfDie");
-	JSObject *dieObj = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *dieObj = JS_NEW_OBJECT(cx);
 	JS_SET_PROPERTY_OBJECT(dieObj, "parent", parent);
 	JS_SET_PROPERTY_INT(dieObj, "level", level);
 
-	JSObject *childArrayObj = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *childArrayObj = JS_NEW_ARRAY(cx);
 	JS_SET_PROPERTY_OBJECT(dieObj, "children", childArrayObj);
 
 	die = in_die;
@@ -569,7 +644,7 @@ jsval DwarfFile::dwarfElfHeader(Elf *elf) {
 	int res = dwarf_elf_init(elf, DW_DLC_READ, NULL, NULL, &dbg, &error);
 	DWARF_CHECK(res, "dwarf_elf_init");
 
-	JSObject *cuArrayObj = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *cuArrayObj = JS_NEW_ARRAY(cx);
 	
 	for (int cu_number = 0; ; cu_number++) {
 		Dwarf_Die no_die = 0;
@@ -629,8 +704,8 @@ jsval DwarfFile::dwarfFile(){
 	Elf_Cmd cmd;
 	Elf *arf, *elf;
 
-	JSObject *dwarfFileObj = JS_NewObject(cx, NULL, NULL, NULL);
-	JSObject *elfArrayObj = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *dwarfFileObj = JS_NEW_OBJECT(cx);
+	JSObject *elfArrayObj = JS_NEW_ARRAY(cx);
 	JS_SET_PROPERTY_OBJECT(dwarfFileObj, "elf", elfArrayObj);
 	JS_SET_PROPERTY_STRING(dwarfFileObj, "filename", filename.c_str());
 	

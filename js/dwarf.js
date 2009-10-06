@@ -15,20 +15,20 @@ Dwarf = {
                                                            attribute.value.value) +
                                         " (" + attribute.value.formName + ", " +
                                         attribute.value.form + ")") : "undefined");
-    res += (" ".repeat(25 - res.length)) + valString;
+    res += (" ".times(25 - res.length)) + valString;
     return res;
   },
 
   dieAsString : function(die) {
     print("die " + die);
-    var res =   "  ".repeat(die.level) + "<" + die.tagName + " \"" + die.name +
+    var res =   "  ".times(die.level) + "<" + die.tagName + " \"" + die.name +
       "\" (o: " + die.offset + ")>\n";  var file = readElf("test.avr.elf");
 
     var child;
     var i;
 
     for (i = 0; i < die.attributes.length; i++) {
-      res += " ".repeat(10) + "  " + this.attributeAsString(die.attributes[i]) + "\n";
+      res += " ".times(10) + "  " + this.attributeAsString(die.attributes[i]) + "\n";
     }
     res += "\n";
     

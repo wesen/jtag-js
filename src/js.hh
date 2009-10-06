@@ -27,6 +27,9 @@
 	{ jsval _objVal = OBJECT_TO_JSVAL(obj2); \
 		JS_SetProperty(cx, obj, name, &_objVal); }
 
+#define JS_NEW_ARRAY(cx) JS_NewArrayObject(cx, 0, NULL)
+#define JS_NEW_OBJECT(cx) JS_NewObject(cx, NULL, NULL, NULL)
+
 class JavaScript {
 protected:
 	JSRuntime *rt;

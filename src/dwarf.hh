@@ -47,11 +47,8 @@ public:
 
 	/* location lists */
 	jsval dwarfLocationList(Dwarf_Attribute attr);
+	jsval dwarfLocDesc(Dwarf_Locdesc *loc);
 	jsval dwarfLocation(Dwarf_Loc *loc);
-	jsval dwarfOpAddr(Dwarf_Unsigned opd);
-	jsval dwarfOpSigned(Dwarf_Unsigned opd);
-	jsval dwarfOpUnsigned(Dwarf_Unsigned opd);
-	jsval dwarfOpBreg(Dwarf_Unsigned opd1, Dwarf_Unsigned opd2);
 
 	/* dwarf attribute */
 	jsval dwarfFormXData(Dwarf_Attribute attr);
