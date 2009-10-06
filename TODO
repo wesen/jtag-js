@@ -1,6 +1,12 @@
+Dwarf:
 - implement lineloc code for dwarf
+- add javascript class for dwarf
+
+JTAG:
 - refactor breakpoint implementation
 - add callback functions on breakpoints
+- make abstraction of debugged device to plan for integration of simulator
+
+General:
 - RAII code for mutexes and sockets
 - check for blocking on mutex *and* IO
-- make abstraction of debugged device to plan for integration of simulator
