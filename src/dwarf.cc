@@ -16,6 +16,8 @@
 #include "dwarfnaming.hh"
 #include "dwarf.hh"
 
+#define SET_PARENT_PROPERTY 1
+
 // #define DWARF_UNIMPLEMENTED() throw DwarfException()
 #define DWARF_THROW(str) \
 	throw (str " in file " __FILE__ " at line " TOSTRING(__LINE__))
@@ -150,6 +152,9 @@ jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribut
 	attrObj = JS_NEW_OBJECT(cx);
 #ifdef SET_PARENT_PROPERTY
 	JS_SET_PROPERTY_OBJECT(attrObj, "parent", attrObj);
+	JS_SET_PROPERTY_OBJECT(attrObj, "die", dieObj);
+	JS_SET_PROPERTY_OBJECT(attrObj, "cu", cuObj);
+	JS_SET_PROPERTY_OBJECT(attrObj, "file", fileObj);
 #endif
 	
 	Dwarf_Half attrNum;
@@ -505,7 +510,7 @@ jsval DwarfFile::dwarfFormValue(Dwarf_Attribute attr) {
 	return valVal;
 }
 
-void DwarfFile::dwarfDieData(JSObject *dieObj, Dwarf_Die _die) {
+void DwarfFile::dwarfDieData(Dwarf_Die _die) {
 	/* die naming information */
 	char *name;
 	int res = dwarf_diename(die, &name, &error);
@@ -635,7 +640,7 @@ jsval DwarfFile::dwarfLine(Dwarf_Line line) {
 	return OBJECT_TO_JSVAL(lineObj);
 }
 
-void DwarfFile::dwarfDieLines(JSObject *dieObj, Dwarf_Die die) {
+void DwarfFile::dwarfDieLines(Dwarf_Die die) {
 	JSObject *linesObj = JS_NEW_ARRAY(cx);
 	
 	Dwarf_Line *linebuf;
@@ -661,9 +666,20 @@ void DwarfFile::dwarfDieLines(JSObject *dieObj, Dwarf_Die die) {
 /* dwarf die */
 jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
 	//	DWARF_UNIMPLEMENTED("dwarfDie");
-	JSObject *dieObj = JS_NEW_OBJECT(cx);
+	JSObject *curDieObj = JS_NEW_OBJECT(cx);
+	JSObject *oldDieObj = dieObj;
+	dieObj = curDieObj;
+	
+	if (level == 0) {
+		cuObj = dieObj;
+	}
+
 #ifdef SET_PARENT_PROPERTY
 	JS_SET_PROPERTY_OBJECT(dieObj, "parent", parent);
+	JS_SET_PROPERTY_OBJECT(dieObj, "file", fileObj);
+	if (level > 0) {
+		JS_SET_PROPERTY_OBJECT(attrObj, "cu", cuObj);
+	}
 #endif
 	JS_SET_PROPERTY_INT(dieObj, "level", level);
 
@@ -671,8 +687,8 @@ jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
 	JS_SET_PROPERTY_OBJECT(dieObj, "children", childArrayObj);
 
 	die = in_die;
-	dwarfDieData(dieObj, in_die);
-	dwarfDieLines(dieObj, in_die);
+	dwarfDieData(in_die);
+	dwarfDieLines(in_die);
 
 	/* get child */
 	Dwarf_Die child;
@@ -718,8 +734,9 @@ jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
 		dwarf_dealloc(dbg, child, DW_DLA_DIE);
 	}
 
+	dieObj = oldDieObj;
 	/* walk siblings */
-	return OBJECT_TO_JSVAL(dieObj);
+	return OBJECT_TO_JSVAL(curDieObj);
 }
 
 /* dwarf compilation unit */
@@ -813,7 +830,7 @@ jsval DwarfFile::dwarfFile(){
 	Elf_Cmd cmd;
 	Elf *arf, *elf;
 
-	JSObject *dwarfFileObj = JS_NEW_OBJECT(cx);
+	JSObject *dwarfFileObj = fileObj = JS_NEW_OBJECT(cx);
 	JSObject *elfArrayObj = JS_NEW_ARRAY(cx);
 	JS_SET_PROPERTY_OBJECT(dwarfFileObj, "elf", elfArrayObj);
 	JS_SET_PROPERTY_STRING(dwarfFileObj, "filename", filename.c_str());

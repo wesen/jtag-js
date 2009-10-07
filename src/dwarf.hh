@@ -29,6 +29,10 @@ protected:
 	Dwarf_Die die;
 	JSContext *cx;
 	JSObject *obj;
+
+	JSObject *fileObj;
+	JSObject *cuObj;
+	JSObject *dieObj;
 	JSObject *attrObj;
 
 	char **srcfiles;
@@ -64,8 +68,8 @@ public:
 	jsval dwarfLine(Dwarf_Line line);
 	
 	/* dwarf die */
-	void dwarfDieData(JSObject *dieObj, Dwarf_Die die);
-	void dwarfDieLines(JSObject *dieObj, Dwarf_Die die);
+	void dwarfDieData(Dwarf_Die die);
+	void dwarfDieLines(Dwarf_Die die);
 	jsval dwarfDie(JSObject *parent, Dwarf_Die die, int level = 0);
 
 	/* dwarf compilation unit */

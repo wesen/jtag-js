@@ -1,14 +1,17 @@
 var DwarfNode = Class.create ({
-  initialize: function(cuhash) {
-    Object.extend(this, cuhash);
+  initialize: function(hash, parent, file) {
+    Object.extend(this, hash);
+    this.parent = parent;
+    this.file = file || this.parent && this.parent.file;
+    
     this.attributes = this.attributes.map(
       function (x) {
-        return new DwarfAttribute(x);
+        return new DwarfAttribute(x, this);
       });
 
     this.children = this.children.map(
       function (x) {
-        return new DwarfTag(x);
+        return new DwarfTag(x, this);
       });
   },
 
@@ -46,6 +49,34 @@ var DwarfNode = Class.create ({
     return this.children;
   },
 
+  getNodeWithOffset: function(offset) {
+    var child;
+
+    if (this.offset && this.offset === offset) {
+      return this;
+    } else {
+      return this.getChildren().map(function (x) {
+        return x.getNodeWithOffset(offset);
+      }).without(undefined)[0];
+    }
+  },
+
+  getAttributeWithOffset: function(offset) {
+    var res = this.getAttributes().find(fieldCompare("offset", offset));
+    if (res) {
+        return res;
+    } else{
+      return this.getChildren().map(function (x) {
+        return x.getAttributeWithOffset(offset);
+      }).without(undefined)[0];
+    }
+  },
+
+  getObjectWithOffset: function(offset) {
+    return this.getNodeWithOffset(offset) ||
+      this.getAttributeWithOffset(offset);
+  },
+  
   matchesPC: function(pc2) {
     var low_pc = this.getAttributeValue("low_pc");
     var high_pc = this.getAttributeValue("high_pc");
@@ -88,8 +119,10 @@ var DwarfNode = Class.create ({
 });
 
 var DwarfValue = Class.create ({
-  initialize: function(hash){
-      Object.extend(this, hash);
+  initialize: function(hash, parent){
+    Object.extend(this, hash);
+    this.parent = parent;
+    this.file = this.parent && this.parent.file;
   },
 
   getType: function () {
@@ -110,19 +143,48 @@ var DwarfValue = Class.create ({
             value.prettyPrint() :
             value)
       + " (" + this.getType() + ")";
+  },
+
+  toString: function () {
+    return "("  + this.prettyPrint() + ")";
+  }
+  
+});
+
+var DwarfRefValue = Class.create(DwarfValue, {
+  getReferencedObject: function (){
+    return this.file && this.file.getObjectWithOffset(this.value);
+  },
+
+  prettyPrint: function () {
+    return "*" + this.getReferencedObject().toString();
   }
 });
 
-var DwarfAttribute = Class.create (
-  {
-  initialize: function(hash) {
+var DwarfAttribute = Class.create ({
+  initialize: function(hash, parent) {
     Object.extend(this, hash);
-    this.value = new DwarfValue(this.value);
+    this.parent = parent;
+    this.file = this.parent && this.parent.file;
+    if (this.value && this.value.formName && (this.value.formName.substr(0, 3) === "ref")) {
+      this.value = new DwarfRefValue(this.value, this);
+    } else{
+      this.value = new DwarfValue(this.value, this);
+    }
   },
-
+  
   prettyPrint: function() {
     return this.name + ": " + this.value.prettyPrint();
+  },
+  
+  toString: function() {
+    return "{" + this.prettyPrint() + "}";
+  },
+
+  getReferencedObject: function (){
+    return this.value.getReferencedObject();
   }
+  
 });
 
 var DwarfTag = Class.create (DwarfNode, {
@@ -132,6 +194,7 @@ var DwarfDie = Class.create(DwarfNode, {
 });
 
 var DwarfCU = Class.create(DwarfNode, {
+  
   getChildrenByType: function (type) {
     return this.getChildren().filter(fieldCompare("tagName", type));
   },
@@ -176,7 +239,7 @@ var Dwarf = Class.create ({
     this.fileData = readElf(filename);
     var elfSections = this.fileData.elf;
 
-    this.cus = elfSections.flatten().map(function (x) { return new DwarfCU(x); });
+    this.cus = elfSections.flatten().map(function (x) { return new DwarfCU(x, this, this); });
   },
 
   getCus: function () {
@@ -210,6 +273,25 @@ var Dwarf = Class.create ({
     return this.getCus().map(objBinder("getSubPrograms")).flatten();
   },
 
+  getNodeWithOffset: function(offset) {
+    return this.getCus().map(function (x) {
+      return x.getNodeWithOffset(offset);
+    }).without(undefined)[0];
+  },
+
+  getAttributeWithOffset: function(offset) {
+    return this.getCus().map(function (x) {
+      return x.getAttributeWithOffset(offset);
+    }).without(undefined)[0];
+  },
+
+  getObjectWithOffset: function(offset) {
+    return this.getCus().map(function (x) {
+      return x.getObjectWithOffset(offset);
+    }).without(undefined)[0];
+  },
+  
+
   getLineForPC: function (pc) {
     getCus().each(
       function (x) {
@@ -220,7 +302,5 @@ var Dwarf = Class.create ({
         return undefined;
       });
   }
-  
-
 });
 
