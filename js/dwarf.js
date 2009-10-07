@@ -1,10 +1,130 @@
-Dwarf = {
+var DwarfNode = Class.create ({
+  initialize: function(cuhash) {
+    Object.extend(this, cuhash);
+    this.attributes = this.attributes.map(
+      function (x) {
+        return new DwarfAttribute(x);
+      });
+
+    this.children = this.children.map(
+      function (x) {
+        return new DwarfTag(x);
+      });
+  },
+
+  /* accessors */
+  getTagName: function () {
+    return this.tagName;
+  },
+
+  getName: function () {
+    return this.name;
+  },
+
+  getLines: function () {
+    return this.lines;
+  },
+
+  getDies: function() {
+    return this.children;
+  },
+
+  getAttributes: function() {
+    return this.attributes;
+  },
+
+  getChildren: function() {
+    return this.children;
+  },
+
+  /* pretty print */
+  prettyPrint : function() {
+    var res =   "  ".times(this.level) + "<" + this.tagName + " \"" + this.name +
+      "\" (o: " + this.offset + ")>\n";
+
+    var child;
+    var i;
+
+    for (i = 0; i < this.attributes.length; i++) {
+      res += " ".times(10) + "  " + (this.attributes[i].prettyPrint()) + "\n";
+    }
+    res += "\n";
+    
+    for (i = 0; i < this.children.length; i++) {
+      child = this.children[i];
+      res += child.prettyPrint();
+    }
+
+    return res;
+  }
+  
+});
+
+var DwarfValue = Class.create ({
+  initialize: function(hash){
+      Object.extend(this, hash);
+  },
+
+  getType: function () {
+    return this.formName;
+  },
+
+  getDirectType: function () {
+    return this.directFormName;
+  },
+
+  getValue: function() {
+    return this.value;
+  },
+
+  prettyPrint: function () {
+    var value = this.getValue();
+    return ((value && (typeof value.prettyPrint === "function")) ?
+            value.prettyPrint() :
+            value)
+      + " (" + this.getType() + ")";
+  }
+});
+
+var DwarfAttribute = Class.create (
+  {
+  initialize: function(hash) {
+    Object.extend(this, hash);
+    this.value = new DwarfValue(this.value);
+  },
+
+  prettyPrint: function() {
+    return this.name + ": " + this.value.prettyPrint();
+  }
+});
+
+var DwarfTag = Class.create (DwarfNode, {
+});
+
+var DwarfDie = Class.create(DwarfNode, {
+});
+
+var DwarfCU = Class.create(DwarfNode, {
+});
+
+var Dwarf = Class.create ({
+  initialize: function(filename) {
+    this.fileData = readElf(filename);
+    var elfSections = this.fileData.elf;
+
+    this.cus = elfSections.flatten().map(function (x) { return new DwarfCU(x); });
+  },
+
+  getCus: function () {
+    return this.cus;
+  },
+
   valueAsString : function (type, value) {
     switch (type) {
-      case "addr":
+     case "addr":
       return value.hex();
-
-      default:
+      
+    default:
       return value;
     }
   },
@@ -57,5 +177,5 @@ Dwarf = {
     return res;
   }
 
-};
+});
 
