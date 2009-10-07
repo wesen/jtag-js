@@ -31,6 +31,9 @@ protected:
 	JSObject *obj;
 	JSObject *attrObj;
 
+	char **srcfiles;
+	Dwarf_Signed fileCnt;
+
 	std::string filename;
 	
 public:

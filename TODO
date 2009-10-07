@@ -8,5 +8,14 @@ JTAG:
 - make abstraction of debugged device to plan for integration of simulator
 
 General:
+- error checking in JS macros through throws
+
+- string allocation JS_NEW_STRING
+
+  	https://developer.mozilla.org/En/SpiderMonkey/JSAPI_Reference/JS_NewString
+	"buf - Pointer to a character array, allocated with JS_malloc, ... The
+	JS engine adopts the buffer."
+	  
+- make usb and gdb run in thread and not fork
 - RAII code for mutexes and sockets
 - check for blocking on mutex *and* IO

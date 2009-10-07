@@ -360,6 +360,15 @@ jsval DwarfFile::dwarfFormDataValue(Dwarf_Attribute attr) {
 
 	case DW_AT_decl_file:
 	case DW_AT_call_file:
+		{
+			Dwarf_Unsigned tempud;
+			int ures = dwarf_formudata(attr, &tempud, &error);
+			DWARF_CHECK(ures, "dwarf_formudata");
+			if ((srcfiles != NULL) &&
+					(fileCnt >= tempud)) {
+				retVal = JS_NEW_STRING_VAL(srcfiles[tempud-1]);
+			}
+		}
 		break;
 		
 	case DW_AT_const_value:
@@ -711,7 +720,28 @@ jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
 
 /* dwarf compilation unit */
 jsval DwarfFile::dwarfCu(Dwarf_Die in_die) {
-	return dwarfDie(NULL, in_die);
+	srcfiles = NULL;
+
+	int sres = dwarf_srcfiles(in_die, &srcfiles, &fileCnt, &error);
+	DWARF_CHECK(sres, "dwarf_srcfiles");
+	if (sres == DW_DLV_OK) {
+		printf("%d files\n", fileCnt);
+	} else {
+		fileCnt = 0;
+	}
+
+	printf("%s\n", srcfiles[0]);
+	
+	jsval retVal =  dwarfDie(NULL, in_die);
+
+	if (sres == DW_DLV_OK) {
+		for (int i = 0; i < fileCnt; i++) {
+			dwarf_dealloc(dbg, srcfiles[i], DW_DLA_STRING);
+		}
+		dwarf_dealloc(dbg, srcfiles, DW_DLA_LIST);
+	}
+
+	return retVal;
 }
 
 /* single dwarf section */

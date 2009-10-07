@@ -11,3 +11,11 @@ function rel() {
 
 
 
+function objBinder(funcname) {
+    return function (x) { return x[funcname](); };
+}
+
+function fieldCompare(field, val) {
+    return function (x) { return x[field] == val; };
+}
+

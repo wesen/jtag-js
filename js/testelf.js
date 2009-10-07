@@ -6,4 +6,4 @@ function test() {
   print(Dwarf.fileAsString(file));
 }
 
-file = readElf("test.avr.elf");
+file = new Dwarf("test.avr.elf");

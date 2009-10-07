@@ -196,6 +196,7 @@ const string *JavaScript::eval(const std::string &str) {
 		JS_ReportError(cx, "Could not evaluate script :\n|%s|\n", src);
 		return new string("<error>\n");
 	} else {
+#ifdef USE_UNEVAL
 		// call uneval
 		jsval r;
 		if (!JS_CallFunctionName(cx, JS_GetGlobalObject(cx), "uneval", 1,
@@ -204,7 +205,11 @@ const string *JavaScript::eval(const std::string &str) {
 			return NULL;
 		}
 		
-		JSString *str = JSVAL_TO_STRING(r);
+		JSString *str = JSVAL_TO_STRING(rval);
+#else
+		JSString *str = JS_ValueToString(cx, rval);
+#endif
+		
 		if (str != NULL) {
 			char *ptr = JS_GetStringBytes(str);
 			unsigned int numBytes = strlen(ptr);
