@@ -24,7 +24,10 @@
 #ifndef JTAG2_H
 #define JTAG2_H
 
+#include <vector>
+
 #include "jtag.h"
+#include "breakpoint.hh"
 
 /*
  * JTAG ICE mkII breakpoints are quite tricky.
