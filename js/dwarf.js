@@ -217,6 +217,7 @@ var Dwarf = Class.create ({
         if (line) {
           return line;
         }
+        return undefined;
       });
   }
   

@@ -1,6 +1,11 @@
+Javascript:
+- read files by line for lookups
+
 Dwarf:
-- implement lineloc code for dwarf
-- add javascript class for dwarf
+X implement lineloc code for dwarf
+X add javascript class for dwarf
+- structures ??
+- C++ ??
 
 JTAG:
 - refactor breakpoint implementation

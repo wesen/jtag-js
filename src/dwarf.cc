@@ -148,7 +148,9 @@ jsval DwarfFile::dwarfLocation(Dwarf_Loc *expr) {
 /* dwarf attribute */
 jsval DwarfFile::dwarfAttribute(JSObject *parent, Dwarf_Half tag, Dwarf_Attribute attr) {
 	attrObj = JS_NEW_OBJECT(cx);
+#ifdef SET_PARENT_PROPERTY
 	JS_SET_PROPERTY_OBJECT(attrObj, "parent", attrObj);
+#endif
 	
 	Dwarf_Half attrNum;
 	int res = dwarf_whatattr(attr, &attrNum, &error);
@@ -660,7 +662,9 @@ void DwarfFile::dwarfDieLines(JSObject *dieObj, Dwarf_Die die) {
 jsval DwarfFile::dwarfDie(JSObject *parent, Dwarf_Die in_die, int level) {
 	//	DWARF_UNIMPLEMENTED("dwarfDie");
 	JSObject *dieObj = JS_NEW_OBJECT(cx);
+#ifdef SET_PARENT_PROPERTY
 	JS_SET_PROPERTY_OBJECT(dieObj, "parent", parent);
+#endif
 	JS_SET_PROPERTY_INT(dieObj, "level", level);
 
 	JSObject *childArrayObj = JS_NEW_ARRAY(cx);
