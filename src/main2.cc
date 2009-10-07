@@ -57,17 +57,40 @@ void printListeners(const char *buf) {
 
 bool ThreadSynchronization::debug = false;
 
+void pollListener(LineIOClass *io) {
+	while (io->isDataAvailable()) {
+		TerminalIOClass::currentIO = io;
+		string *buf = listenerBufs[io];
+		if (buf == NULL) {
+			buf = listenerBufs[io] = new string();
+		}
+		
+		const string *str = io->getData();
+		*buf += *str;
+		delete str;
+		
+		if (myJS.isCompilable(*buf)) {
+			const string *res = myJS.eval(*buf);
+			buf->clear();
+			io->print(*res);
+			delete res;
+		}
+	}
+}
+
 int main(int argc, char *argv[]) {
-	Console mainConsole;
+	terminal.start();
+	listeners.push_front(&terminal);
+
+	TerminalIOClass::currentIO = &terminal;
+	
+	TerminalConsole mainConsole;
 	console = &mainConsole;
 
 	Console::debugMode = true;
 	Console::quietMode = true;
 
 	myJS.init();
-
-	terminal.start();
-	listeners.push_front(&terminal);
 
 	for (int i = 1; i < argc; i++) {
 		myJS.load(argv[i]);
@@ -94,26 +117,7 @@ int main(int argc, char *argv[]) {
 		for (list<LineIOClass *>::iterator it = l->begin();
 				 it != l->end();
 				 it++) {
-			LineIOClass *io = *it;
-
-			while (io->isDataAvailable()) {
-				TerminalIOClass::currentIO = io;
-				string *buf = listenerBufs[io];
-				if (buf == NULL) {
-					buf = listenerBufs[io] = new string();
-				}
-
-				const string *str = io->getData();
-				*buf += *str;
-				delete str;
-					
-				if (myJS.isCompilable(*buf)) {
-					const string *res = myJS.eval(*buf);
-					buf->clear();
-					io->print(*res);
-					delete res;
-				}
-			}
+			pollListener((LineIOClass *)*it);
 	  }
 		listeners.unlock();
 	}

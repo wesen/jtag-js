@@ -23,10 +23,9 @@ TCPServer::~TCPServer() {
 void TCPServer::start() {
 	TCPServer::initSocketAddress(&name, hostname, port);
 	fd = TCPServer::makeSocket(&name, port);
-	console->statusOut("Waiting for connection on port %hu\n", port);
+	console->statusOut("Waiting for connection on port %hu ...\n", port);
 	SYSCALL_CHECK(listen(fd, 1));
 	fds.add(fd);
-	printf("server started\n");
 	ThreadedClass::start();
 }
 
